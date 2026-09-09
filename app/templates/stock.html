@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>La Cave du Coin — Stock</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+  <main>
+    <div class="grid-2">
+      <div class="card">
+        <h2>Nouveau produit (Admin)</h2>
+        <div id="product-error" class="alert alert-error" style="display:none"></div>
+        <input type="text" id="p-name" placeholder="Désignation" />
+        <br /><br />
+        <input type="text" id="p-category" placeholder="Catégorie (Jus, Sodas, Eaux, Bières...)" />
+        <br /><br />
+        <input type="text" id="p-barcode" placeholder="Code-barres (EAN-13, optionnel)" />
+        <br /><br />
+        <input type="number" id="p-carton" placeholder="Unités par carton" value="24" />
+        <br /><br />
+        <input type="number" id="p-pack" placeholder="Unités par pack" value="6" />
+        <br /><br />
+        <input type="number" id="p-achat" placeholder="Prix d'achat unitaire (GNF)" />
+        <br /><br />
+        <input type="number" id="p-vente" placeholder="Prix de vente unitaire (GNF)" />
+        <br /><br />
+        <input type="number" id="p-min" placeholder="Seuil alerte (cartons)" value="5" />
+        <br /><br />
+        <button id="create-product">Créer le produit</button>
+      </div>
+
+      <div class="card">
+        <h2>Mouvement de stock</h2>
+        <div id="movement-error" class="alert alert-error" style="display:none"></div>
+        <select id="m-product"></select>
+        <br /><br />
+        <select id="m-type">
+          <option value="entree">Entrée (réception fournisseur)</option>
+          <option value="casse">Casse</option>
+          <option value="don">Don</option>
+          <option value="ajustement">Ajustement inventaire</option>
+        </select>
+        <br /><br />
+        <input type="number" id="m-qty" placeholder="Quantité" />
+        <select id="m-unit">
+          <option value="unite">Unité</option>
+          <option value="carton">Carton</option>
+          <option value="pack">Pack</option>
+        </select>
+        <br /><br />
+        <input type="text" id="m-invoice" placeholder="N° facture (si entrée)" />
+        <br /><br />
+        <input type="text" id="m-reason" placeholder="Motif (si casse/don/ajustement)" />
+        <br /><br />
+        <button id="create-movement">Enregistrer le mouvement</button>
+        <p style="color:var(--text-dim); font-size:0.85rem">
+          Tout mouvement hors vente reste "en attente" jusqu'à validation par une 2e personne
+          (Admin obligatoire pour un ajustement d'inventaire).
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Import du catalogue (CSV)</h2>
+      <p style="color:var(--text-dim); font-size:0.85rem">
+        Colonnes attendues : <code>barcode,name,category,unit_carton_qty,unit_pack_qty,prix_achat,prix_vente,stock_min_cartons</code>
+        (seuls <code>name</code>, <code>category</code>, <code>prix_achat</code>, <code>prix_vente</code> sont obligatoires).
+      </p>
+      <a href="/api/products/import/template" id="download-template">Télécharger le modèle CSV</a>
+      <br /><br />
+      <input type="file" id="import-file" accept=".csv" />
+      <button id="import-submit">Importer</button>
+      <div id="import-result"></div>
+    </div>
+
+    <div class="card">
+      <h2>Produits & stock courant</h2>
+      <table>
+        <thead><tr><th>Nom</th><th>Catégorie</th><th>Code-barres</th><th>Stock (unités)</th><th>Seuil alerte</th><th>Prix vente</th></tr></thead>
+        <tbody id="products-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Mouvements en attente de validation</h2>
+      <table>
+        <thead><tr><th>Produit</th><th>Type</th><th>Qté (unités)</th><th>Créé par</th><th>Action</th></tr></thead>
+        <tbody id="pending-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/stock.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cave_du_coin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: cave_du_coin
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    # Pas de port publié vers l'hôte : la base n'est accessible que depuis les
+    # autres conteneurs (app) sur le réseau interne Docker.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cave_du_coin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://cave_du_coin:${POSTGRES_PASSWORD:-change-me}@db:5432/cave_du_coin
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+    expose:
+      - "8000"
+    # Ce fichier de base n'expose rien vers l'hôte : combiner avec
+    # docker-compose.lan.yml (accès réseau local, PC boutique) ou
+    # docker-compose.vps.yml (accès distant via internet, HTTPS) — voir
+    # DEPLOYMENT.md.
+
+volumes:
+  db_data:

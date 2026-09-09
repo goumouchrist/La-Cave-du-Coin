@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>La Cave du Coin — Caisse</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+  <main>
+    <div id="no-session" class="alert alert-error" style="display:none">
+      Aucune session de caisse ouverte. Ouvrez une session dans "Sessions caisse" avant de vendre.
+    </div>
+
+    <div class="card">
+      <h2>Vente en cours</h2>
+      <div id="scan-error" class="alert alert-error" style="display:none"></div>
+      <input type="text" id="barcode-input" placeholder="Scanner / saisir code-barres puis Entrée" autofocus />
+      <div id="quick-products" class="quick-products"></div>
+      <table>
+        <thead>
+          <tr><th>Produit</th><th>Qté</th><th>Prix unitaire</th><th>Total</th><th></th></tr>
+        </thead>
+        <tbody id="cart-body"></tbody>
+      </table>
+      <h3>Total : <span id="cart-total">0 GNF</span></h3>
+    </div>
+
+    <div class="card">
+      <h2>Encaissement</h2>
+      <label>Mode de paiement</label>
+      <select id="payment-mode">
+        <option value="especes">Espèces</option>
+        <option value="mobile_money">Mobile Money</option>
+        <option value="credit">Crédit (client fidèle)</option>
+        <option value="avoir">Avoir (solde crédité suite à un retour)</option>
+      </select>
+      <br /><br />
+      <div id="avoir-fields" style="display:none">
+        <input type="text" id="avoir-phone" placeholder="Téléphone du client" />
+        <button id="avoir-lookup" class="secondary">Vérifier le solde</button>
+        <p id="avoir-balance"></p>
+      </div>
+      <label>Montant remis par le client (GNF)</label>
+      <input type="number" id="amount-given" value="0" />
+      <p>Monnaie à rendre : <strong id="change-amount">0 GNF</strong></p>
+      <button id="validate-sale">Valider la vente</button>
+      <div id="sale-result"></div>
+    </div>
+
+    <div class="card">
+      <h2>Retour client (avoir)</h2>
+      <div id="return-error" class="alert alert-error" style="display:none"></div>
+      <input type="text" id="return-transaction" placeholder="Numéro de transaction du ticket (ex: TX-...)" />
+      <button id="return-search" class="secondary">Rechercher le ticket</button>
+
+      <div id="return-details" style="display:none; margin-top:14px">
+        <table>
+          <thead><tr><th>Produit</th><th>Vendu</th><th>Qté à retourner</th></tr></thead>
+          <tbody id="return-items-body"></tbody>
+        </table>
+        <br />
+        <input type="text" id="return-customer-name" placeholder="Nom du client" />
+        <br /><br />
+        <input type="text" id="return-customer-phone" placeholder="Téléphone du client (identifie son avoir)" />
+        <br /><br />
+        <input type="text" id="return-reason" placeholder="Motif du retour" />
+        <br /><br />
+        <button id="return-submit">Créditer le client (avoir)</button>
+      </div>
+      <div id="return-result"></div>
+    </div>
+  </main>
+
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/pos.js"></script>
+</body>
+</html>

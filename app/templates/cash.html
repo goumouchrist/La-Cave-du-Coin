@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>La Cave du Coin — Sessions de caisse</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+  <main>
+    <div id="status-box" class="card">
+      <h2>Session en cours</h2>
+      <p id="session-status">Chargement...</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2>Ouvrir la caisse</h2>
+        <div id="open-error" class="alert alert-error" style="display:none"></div>
+        <input type="number" id="opening-amount" placeholder="Fond de caisse initial (GNF)" />
+        <br /><br />
+        <button id="open-session">Ouvrir</button>
+      </div>
+
+      <div class="card">
+        <h2>Fermer la caisse</h2>
+        <div id="close-error" class="alert alert-error" style="display:none"></div>
+        <input type="number" id="closing-physical" placeholder="Montant physique compté (GNF)" />
+        <br /><br />
+        <button id="close-session">Fermer</button>
+        <div id="close-result"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/cash.js"></script>
+</body>
+</html>

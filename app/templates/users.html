@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>La Cave du Coin — Utilisateurs</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+  <main>
+    <div class="card">
+      <h2>Nouvel utilisateur</h2>
+      <div id="user-error" class="alert alert-error" style="display:none"></div>
+      <input type="text" id="u-username" placeholder="Identifiant" />
+      <br /><br />
+      <input type="text" id="u-fullname" placeholder="Nom complet" />
+      <br /><br />
+      <input type="password" id="u-password" placeholder="Mot de passe" />
+      <br /><br />
+      <select id="u-role">
+        <option value="caissier">Caissier</option>
+        <option value="manager">Manager</option>
+        <option value="admin">Admin</option>
+      </select>
+      <br /><br />
+      <button id="create-user">Créer</button>
+    </div>
+
+    <div class="card">
+      <h2>Utilisateurs existants</h2>
+      <table>
+        <thead><tr><th>Identifiant</th><th>Nom</th><th>Rôle</th><th>Actif</th></tr></thead>
+        <tbody id="users-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/users.js"></script>
+</body>
+</html>

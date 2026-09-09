@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>La Cave du Coin — Connexion</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-box">
+      <img src="/static/img/logo.png" alt="La Cave du Coin" />
+      <h2>La Cave du Coin</h2>
+      <div id="error" class="alert alert-error" style="display:none"></div>
+      <form id="login-form">
+        <input type="text" id="username" placeholder="Identifiant" required />
+        <input type="password" id="password" placeholder="Mot de passe" required />
+        <button type="submit">Se connecter</button>
+      </form>
+    </div>
+  </div>
+  <script src="/static/js/common.js"></script>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const errorBox = document.getElementById("error");
+      errorBox.style.display = "none";
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        if (!res.ok) {
+          const body = await res.json();
+          throw new Error(body.detail || "Erreur de connexion");
+        }
+        const data = await res.json();
+        setAuth(data);
+        window.location.href = "/pos";
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>

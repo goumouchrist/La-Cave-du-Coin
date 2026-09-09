@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>La Cave du Coin — Statistiques</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body>
+  <div id="navbar"></div>
+  <main>
+    <div class="grid-2">
+      <div class="card">
+        <h2>Top 5 des ventes (7 derniers jours)</h2>
+        <canvas id="top-products-chart"></canvas>
+      </div>
+      <div class="card">
+        <h2>Ventes par catégorie</h2>
+        <canvas id="category-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2>Ventes par caissier</h2>
+        <canvas id="cashier-chart"></canvas>
+      </div>
+      <div class="card">
+        <h2>Prévisions</h2>
+        <p id="revenue-forecast">Chargement...</p>
+        <h3>Alertes de rupture</h3>
+        <table>
+          <thead><tr><th>Produit</th><th>Conso. moy/jour</th><th>Jours restants</th></tr></thead>
+          <tbody id="stockout-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

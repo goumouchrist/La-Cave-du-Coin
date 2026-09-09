@@ -1,0 +1,305 @@
+const IDENTICAL_ITEMS_CONFIRM_THRESHOLD = 5;
+
+let cart = []; // { product_id, name, prix_vente, qty, quantity_confirmed }
+let currentSession = null;
+let avoirCustomer = null;
+let returnSale = null;
+
+async function init() {
+  requireAuth(["admin", "manager", "caissier"]);
+  renderNavbar("/pos");
+
+  try {
+    currentSession = await apiFetch("/api/cash-sessions/current");
+  } catch (e) {
+    currentSession = null;
+  }
+  document.getElementById("no-session").style.display = currentSession ? "none" : "block";
+
+  document.getElementById("barcode-input").addEventListener("keydown", async (e) => {
+    if (e.key !== "Enter") return;
+    const barcode = e.target.value.trim();
+    e.target.value = "";
+    if (!barcode) return;
+    await scanBarcode(barcode);
+  });
+
+  document.getElementById("amount-given").addEventListener("input", updateChange);
+  document.getElementById("validate-sale").addEventListener("click", validateSale);
+  document.getElementById("payment-mode").addEventListener("change", onPaymentModeChange);
+  document.getElementById("avoir-lookup").addEventListener("click", lookupAvoirCustomer);
+  document.getElementById("return-search").addEventListener("click", searchReturnSale);
+  document.getElementById("return-submit").addEventListener("click", submitReturn);
+
+  renderCart();
+  loadQuickProducts();
+}
+
+function onPaymentModeChange() {
+  const mode = document.getElementById("payment-mode").value;
+  document.getElementById("avoir-fields").style.display = mode === "avoir" ? "block" : "none";
+  if (mode !== "avoir") {
+    avoirCustomer = null;
+    document.getElementById("avoir-balance").textContent = "";
+  }
+}
+
+async function lookupAvoirCustomer() {
+  const phone = document.getElementById("avoir-phone").value.trim();
+  const balanceBox = document.getElementById("avoir-balance");
+  if (!phone) {
+    balanceBox.textContent = "Saisissez un numéro de téléphone.";
+    return;
+  }
+  try {
+    const results = await apiFetch(`/api/customers/search?phone=${encodeURIComponent(phone)}`);
+    if (results.length === 0) {
+      avoirCustomer = null;
+      balanceBox.textContent = "Aucun client trouvé avec ce numéro (pas d'avoir disponible).";
+      return;
+    }
+    avoirCustomer = results[0];
+    balanceBox.textContent = `${avoirCustomer.name} — solde avoir : ${formatGNF(avoirCustomer.credit_balance_gnf)}`;
+  } catch (err) {
+    balanceBox.textContent = err.message;
+  }
+}
+
+async function loadQuickProducts() {
+  try {
+    const products = await apiFetch("/api/products");
+    const box = document.getElementById("quick-products");
+    box.innerHTML = products
+      .map(
+        (p) =>
+          `<button onclick='addToCart(${JSON.stringify({ product_id: p.id, name: p.name, prix_vente: p.prix_vente })})'>${p.name} — ${formatGNF(p.prix_vente)}</button>`
+      )
+      .join("");
+  } catch (e) {
+    // silencieux : la recherche rapide est un plus, pas bloquant pour la vente au scan
+  }
+}
+
+async function scanBarcode(barcode) {
+  const errorBox = document.getElementById("scan-error");
+  errorBox.style.display = "none";
+  try {
+    const product = await apiFetch("/api/sales/scan", {
+      method: "POST",
+      body: JSON.stringify({ barcode, action_type: "vente" }),
+    });
+    if (product.double_scan_alert) {
+      if (!confirm(`Double scan détecté pour "${product.name}" en moins de 2s. Confirmer l'ajout ?`)) {
+        return;
+      }
+    }
+    addToCart(product);
+  } catch (err) {
+    errorBox.textContent = err.message === "Not Found" ? "Produit inconnu" : err.message;
+    errorBox.style.display = "block";
+  }
+}
+
+function addToCart(product) {
+  let line = cart.find((l) => l.product_id === product.product_id);
+  if (!line) {
+    line = { product_id: product.product_id, name: product.name, prix_vente: product.prix_vente, qty: 0, quantity_confirmed: false };
+    cart.push(line);
+  }
+  line.qty += 1;
+  if (line.qty > IDENTICAL_ITEMS_CONFIRM_THRESHOLD) {
+    line.quantity_confirmed = false;
+  }
+  renderCart();
+}
+
+function renderCart() {
+  const body = document.getElementById("cart-body");
+  body.innerHTML = "";
+  let total = 0;
+
+  cart.forEach((line, idx) => {
+    const lineTotal = line.qty * line.prix_vente;
+    total += lineTotal;
+    const needsConfirm = line.qty > IDENTICAL_ITEMS_CONFIRM_THRESHOLD && !line.quantity_confirmed;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${line.name}${needsConfirm ? ' <span style="color:#c65a4a">(confirmation requise)</span>' : ""}</td>
+      <td>
+        <button class="secondary" onclick="changeQty(${idx}, -1)">-</button>
+        ${line.qty}
+        <button class="secondary" onclick="changeQty(${idx}, 1)">+</button>
+      </td>
+      <td>${formatGNF(line.prix_vente)}</td>
+      <td>${formatGNF(lineTotal)}</td>
+      <td>
+        ${needsConfirm ? `<button onclick="confirmQty(${idx})">Confirmer</button>` : ""}
+        <button class="danger" onclick="removeLine(${idx})">X</button>
+      </td>
+    `;
+    body.appendChild(tr);
+  });
+
+  document.getElementById("cart-total").textContent = formatGNF(total);
+  updateChange();
+}
+
+function changeQty(idx, delta) {
+  cart[idx].qty = Math.max(0, cart[idx].qty + delta);
+  if (cart[idx].qty === 0) {
+    cart.splice(idx, 1);
+  } else if (cart[idx].qty <= IDENTICAL_ITEMS_CONFIRM_THRESHOLD) {
+    cart[idx].quantity_confirmed = false;
+  }
+  renderCart();
+}
+
+function confirmQty(idx) {
+  cart[idx].quantity_confirmed = true;
+  renderCart();
+}
+
+function removeLine(idx) {
+  cart.splice(idx, 1);
+  renderCart();
+}
+
+function cartTotal() {
+  return cart.reduce((sum, l) => sum + l.qty * l.prix_vente, 0);
+}
+
+function updateChange() {
+  const given = parseInt(document.getElementById("amount-given").value || "0", 10);
+  const change = Math.max(given - cartTotal(), 0);
+  document.getElementById("change-amount").textContent = formatGNF(change);
+}
+
+async function validateSale() {
+  const resultBox = document.getElementById("sale-result");
+  resultBox.innerHTML = "";
+
+  if (!currentSession) {
+    resultBox.innerHTML = `<div class="alert alert-error">Aucune session de caisse ouverte.</div>`;
+    return;
+  }
+  if (cart.length === 0) {
+    resultBox.innerHTML = `<div class="alert alert-error">Le panier est vide.</div>`;
+    return;
+  }
+
+  const paymentMode = document.getElementById("payment-mode").value;
+  if (paymentMode === "avoir" && !avoirCustomer) {
+    resultBox.innerHTML = `<div class="alert alert-error">Recherchez d'abord le client par téléphone pour payer par avoir.</div>`;
+    return;
+  }
+
+  const payload = {
+    cash_session_id: currentSession.id,
+    payment_mode: paymentMode,
+    amount_given: parseInt(document.getElementById("amount-given").value || "0", 10),
+    items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, quantity_confirmed: l.quantity_confirmed })),
+    customer_id: paymentMode === "avoir" ? avoirCustomer.id : null,
+  };
+
+  try {
+    const sale = await apiFetch("/api/sales", { method: "POST", body: JSON.stringify(payload) });
+    resultBox.innerHTML = `
+      <div class="alert alert-success">
+        Vente #${sale.transaction_number} enregistrée. Monnaie à rendre : ${formatGNF(sale.change_amount)}.
+        <a href="/api/sales/${sale.id}/receipt.pdf" target="_blank">Imprimer le reçu</a>
+      </div>
+    `;
+    cart = [];
+    document.getElementById("amount-given").value = 0;
+    renderCart();
+  } catch (err) {
+    resultBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+async function searchReturnSale() {
+  const errorBox = document.getElementById("return-error");
+  const detailsBox = document.getElementById("return-details");
+  errorBox.style.display = "none";
+  detailsBox.style.display = "none";
+  returnSale = null;
+
+  const transactionNumber = document.getElementById("return-transaction").value.trim();
+  if (!transactionNumber) return;
+
+  try {
+    returnSale = await apiFetch(`/api/sales/by-transaction/${encodeURIComponent(transactionNumber)}`);
+    if (returnSale.status === "annulee") {
+      errorBox.textContent = "Ce ticket est annulé, aucun retour possible.";
+      errorBox.style.display = "block";
+      returnSale = null;
+      return;
+    }
+
+    const body = document.getElementById("return-items-body");
+    body.innerHTML = returnSale.items
+      .map(
+        (item) => `
+        <tr>
+          <td>Produit #${item.product_id}</td>
+          <td>${item.qty_units}</td>
+          <td><input type="number" min="0" max="${item.qty_units}" value="0" data-sale-item-id="${item.id}" class="return-qty-input" /></td>
+        </tr>`
+      )
+      .join("");
+    detailsBox.style.display = "block";
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.style.display = "block";
+  }
+}
+
+async function submitReturn() {
+  const errorBox = document.getElementById("return-error");
+  const resultBox = document.getElementById("return-result");
+  errorBox.style.display = "none";
+  resultBox.innerHTML = "";
+
+  if (!returnSale) return;
+
+  const items = [];
+  document.querySelectorAll(".return-qty-input").forEach((input) => {
+    const qty = parseInt(input.value || "0", 10);
+    if (qty > 0) {
+      items.push({ sale_item_id: parseInt(input.dataset.saleItemId, 10), qty });
+    }
+  });
+
+  if (items.length === 0) {
+    errorBox.textContent = "Indiquez une quantité à retourner sur au moins une ligne.";
+    errorBox.style.display = "block";
+    return;
+  }
+
+  const payload = {
+    customer_name: document.getElementById("return-customer-name").value.trim(),
+    customer_phone: document.getElementById("return-customer-phone").value.trim() || null,
+    reason: document.getElementById("return-reason").value.trim() || null,
+    items,
+  };
+
+  if (!payload.customer_name) {
+    errorBox.textContent = "Le nom du client est requis pour créditer son avoir.";
+    errorBox.style.display = "block";
+    return;
+  }
+
+  try {
+    const result = await apiFetch(`/api/sales/${returnSale.id}/return`, { method: "POST", body: JSON.stringify(payload) });
+    resultBox.innerHTML = `<div class="alert alert-success">Retour enregistré : ${formatGNF(result.total_refund_gnf)} crédités sur l'avoir du client.</div>`;
+    document.getElementById("return-details").style.display = "none";
+    document.getElementById("return-transaction").value = "";
+    returnSale = null;
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.style.display = "block";
+  }
+}
+
+init();
