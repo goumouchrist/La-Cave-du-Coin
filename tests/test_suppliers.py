@@ -11,6 +11,28 @@ def test_create_supplier(db_session):
     assert supplier.is_active is True
 
 
+def test_deactivate_supplier_hides_it_from_list_but_keeps_history(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    supplier = suppliers_service.create_supplier(db_session, "Fournisseur à supprimer", "623909090", None)
+    product = Product(name="Coca-Cola 33cl", category="Sodas", prix_achat=3000, prix_vente=5000)
+    db_session.add(product)
+    db_session.commit()
+    db_session.refresh(product)
+
+    movement = stock_service.create_movement(
+        db_session, product, MovementType.ENTREE, qty=1, unit="carton",
+        created_by=admin.id, supplier_id=supplier.id,
+    )
+    stock_service.validate_movement(db_session, movement, manager, approve=True)
+
+    suppliers_service.deactivate_supplier(db_session, supplier)
+
+    assert supplier not in suppliers_service.list_suppliers(db_session)
+    history = suppliers_service.delivery_history(db_session, supplier.id)
+    assert len(history) == 1, "l'historique des livraisons doit survivre à la suppression du fournisseur"
+
+
 def test_list_suppliers_excludes_inactive(db_session):
     active = suppliers_service.create_supplier(db_session, "Fournisseur A", None, None)
     inactive = suppliers_service.create_supplier(db_session, "Fournisseur B", None, None)

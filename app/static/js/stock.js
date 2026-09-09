@@ -25,7 +25,10 @@ async function loadSuppliers() {
         <td>${s.name}</td>
         <td>${s.phone || "-"}</td>
         <td>${s.address || "-"}</td>
-        <td><button class="secondary" onclick="showSupplierHistory(${s.id})">Voir</button></td>
+        <td>
+          <button class="secondary" onclick="showSupplierHistory(${s.id})">Voir</button>
+          <button class="danger" onclick="deleteSupplier(${s.id})">Supprimer</button>
+        </td>
       </tr>`
     )
     .join("");
@@ -57,6 +60,18 @@ async function createSupplier() {
   } catch (err) {
     errorBox.textContent = err.message;
     errorBox.style.display = "block";
+  }
+}
+
+async function deleteSupplier(supplierId) {
+  if (!confirm("Supprimer ce fournisseur ? L'historique des livraisons déjà enregistrées sera conservé.")) {
+    return;
+  }
+  try {
+    await apiFetch(`/api/suppliers/${supplierId}`, { method: "DELETE" });
+    await loadSuppliers();
+  } catch (err) {
+    alert(err.message);
   }
 }
 

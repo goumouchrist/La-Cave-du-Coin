@@ -21,6 +21,14 @@ def list_suppliers(db: Session = Depends(get_db), _: User = Depends(require_role
     return suppliers_service.list_suppliers(db)
 
 
+@router.delete("/{supplier_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_supplier(supplier_id: int, db: Session = Depends(get_db), _: User = Depends(require_role(Role.ADMIN, Role.MANAGER))):
+    supplier = db.get(Supplier, supplier_id)
+    if not supplier:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fournisseur introuvable")
+    suppliers_service.deactivate_supplier(db, supplier)
+
+
 @router.get("/{supplier_id}/movements", response_model=list[StockMovementOut])
 def supplier_delivery_history(supplier_id: int, db: Session = Depends(get_db), _: User = Depends(require_role(Role.ADMIN, Role.MANAGER))):
     supplier = db.get(Supplier, supplier_id)

@@ -15,6 +15,15 @@ def list_suppliers(db: Session) -> list[Supplier]:
     return db.query(Supplier).filter(Supplier.is_active.is_(True)).all()
 
 
+def deactivate_supplier(db: Session, supplier: Supplier) -> Supplier:
+    """Désactive le fournisseur (suppression logique) plutôt qu'une suppression
+    physique, pour ne jamais casser l'historique des livraisons déjà enregistrées."""
+    supplier.is_active = False
+    db.commit()
+    db.refresh(supplier)
+    return supplier
+
+
 def delivery_history(db: Session, supplier_id: int) -> list[StockMovement]:
     """Historique des réceptions (entrées) validées pour ce fournisseur, plus récentes en premier."""
     return (
