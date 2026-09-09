@@ -44,6 +44,7 @@ class ProductCreate(BaseModel):
     name: str
     category: str
     barcode: str | None = None
+    supplier_id: int | None = None
     unit_carton_qty: int = 24
     unit_pack_qty: int = 6
     prix_achat: int = Field(ge=0)
@@ -68,6 +69,7 @@ class ProductOut(BaseModel):
     name: str
     category: str
     barcode: str | None
+    supplier_id: int | None
     unit_carton_qty: int
     unit_pack_qty: int
     prix_achat: int
@@ -76,6 +78,25 @@ class ProductOut(BaseModel):
     stock_min_cartons: int
     is_active: bool
     current_stock_units: int = 0
+
+    class Config:
+        from_attributes = True
+
+
+# ---------- Suppliers ----------
+
+class SupplierCreate(BaseModel):
+    name: str
+    phone: str | None = None
+    address: str | None = None
+
+
+class SupplierOut(BaseModel):
+    id: int
+    name: str
+    phone: str | None
+    address: str | None
+    is_active: bool
 
     class Config:
         from_attributes = True
@@ -90,6 +111,7 @@ class StockMovementCreate(BaseModel):
     unit: str = Field(default="unite", description="unite | carton | pack")
     invoice_number: str | None = None
     reason: str | None = None
+    supplier_id: int | None = None
 
 
 class StockMovementValidate(BaseModel):
@@ -100,6 +122,7 @@ class StockMovementValidate(BaseModel):
 class StockMovementOut(BaseModel):
     id: int
     product_id: int
+    supplier_id: int | None
     type: MovementType
     qty_units: int
     invoice_number: str | None

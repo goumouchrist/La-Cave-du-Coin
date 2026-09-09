@@ -46,6 +46,9 @@ Monnaie : **Franc Guinéen (GNF)**.
   **conversion automatique** vers l'unité de base, mouvements
   entrée/sortie-vente/casse/don/ajustement, **workflow de double validation**
   (saisie + supervision) pour tout mouvement hors vente, alertes de seuil bas.
+- **Fournisseurs** : fiche fournisseur (nom, téléphone, adresse), rattachée en
+  fournisseur habituel sur un produit et/ou à chaque mouvement d'entrée
+  (avec n° de facture), avec **historique des livraisons par fournisseur**.
 - **Reçus** : génération PDF (format ticket 80mm) avec toutes les mentions
   obligatoires du cahier des charges (magasin, NIF, n° transaction, caissier,
   détail des lignes, mention légale, QR code), marquage **DUPLICATA** en cas de
@@ -187,7 +190,7 @@ traçabilité (§1 du cahier des charges) reste la source de vérité unique.
 
 Documentation interactive complète sur `/docs` une fois le serveur lancé.
 Routers principaux : `/api/auth`, `/api/users`, `/api/products`,
-`/api/stock`, `/api/cash-sessions`, `/api/sales`, `/api/stats`.
+`/api/stock`, `/api/suppliers`, `/api/cash-sessions`, `/api/sales`, `/api/stats`.
 
 ## Déploiement (MEP)
 

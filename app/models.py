@@ -71,6 +71,19 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class Supplier(Base):
+    __tablename__ = "suppliers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(150))
+    phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    products: Mapped[list["Product"]] = relationship(back_populates="supplier")
+
+
 class Product(Base):
     __tablename__ = "products"
 
@@ -78,6 +91,7 @@ class Product(Base):
     barcode: Mapped[str | None] = mapped_column(String(20), unique=True, index=True, nullable=True)
     name: Mapped[str] = mapped_column(String(150))
     category: Mapped[str] = mapped_column(String(50))
+    supplier_id: Mapped[int | None] = mapped_column(ForeignKey("suppliers.id"), nullable=True)
     unit_carton_qty: Mapped[int] = mapped_column(Integer, default=24)
     unit_pack_qty: Mapped[int] = mapped_column(Integer, default=6)
     prix_achat: Mapped[int] = mapped_column(Integer)
@@ -87,6 +101,7 @@ class Product(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
+    supplier: Mapped["Supplier"] = relationship(back_populates="products")
     movements: Mapped[list["StockMovement"]] = relationship(back_populates="product")
 
 
@@ -95,6 +110,7 @@ class StockMovement(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
+    supplier_id: Mapped[int | None] = mapped_column(ForeignKey("suppliers.id"), nullable=True)
     type: Mapped[MovementType] = mapped_column(Enum(MovementType))
     qty_units: Mapped[int] = mapped_column(Integer)
     invoice_number: Mapped[str | None] = mapped_column(String(50), nullable=True)

@@ -28,6 +28,10 @@
         <br /><br />
         <input type="number" id="p-min" placeholder="Seuil alerte (cartons)" value="5" />
         <br /><br />
+        <select id="p-supplier">
+          <option value="">Fournisseur habituel (optionnel)</option>
+        </select>
+        <br /><br />
         <button id="create-product">Créer le produit</button>
       </div>
 
@@ -50,6 +54,10 @@
           <option value="pack">Pack</option>
         </select>
         <br /><br />
+        <select id="m-supplier">
+          <option value="">Fournisseur (si entrée)</option>
+        </select>
+        <br /><br />
         <input type="text" id="m-invoice" placeholder="N° facture (si entrée)" />
         <br /><br />
         <input type="text" id="m-reason" placeholder="Motif (si casse/don/ajustement)" />
@@ -60,6 +68,24 @@
           (Admin obligatoire pour un ajustement d'inventaire).
         </p>
       </div>
+    </div>
+
+    <div class="card">
+      <h2>Fournisseurs</h2>
+      <div id="supplier-error" class="alert alert-error" style="display:none"></div>
+      <input type="text" id="s-name" placeholder="Nom du fournisseur" />
+      <br /><br />
+      <input type="text" id="s-phone" placeholder="Téléphone (optionnel)" />
+      <br /><br />
+      <input type="text" id="s-address" placeholder="Adresse (optionnel)" />
+      <br /><br />
+      <button id="create-supplier">Ajouter le fournisseur</button>
+
+      <table>
+        <thead><tr><th>Nom</th><th>Téléphone</th><th>Adresse</th><th>Historique livraisons</th></tr></thead>
+        <tbody id="suppliers-body"></tbody>
+      </table>
+      <div id="supplier-history"></div>
     </div>
 
     <div class="card">

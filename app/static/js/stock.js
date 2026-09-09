@@ -1,4 +1,5 @@
 let products = [];
+let suppliers = [];
 
 async function init() {
   requireAuth(["admin", "manager"]);
@@ -7,9 +8,89 @@ async function init() {
   document.getElementById("create-product").addEventListener("click", createProduct);
   document.getElementById("create-movement").addEventListener("click", createMovement);
   document.getElementById("import-submit").addEventListener("click", importCsv);
+  document.getElementById("create-supplier").addEventListener("click", createSupplier);
 
+  await loadSuppliers();
   await loadProducts();
   await loadPendingMovements();
+}
+
+async function loadSuppliers() {
+  suppliers = await apiFetch("/api/suppliers");
+  const body = document.getElementById("suppliers-body");
+  body.innerHTML = suppliers
+    .map(
+      (s) => `
+      <tr>
+        <td>${s.name}</td>
+        <td>${s.phone || "-"}</td>
+        <td>${s.address || "-"}</td>
+        <td><button class="secondary" onclick="showSupplierHistory(${s.id})">Voir</button></td>
+      </tr>`
+    )
+    .join("");
+
+  const optionsHtml = suppliers.map((s) => `<option value="${s.id}">${s.name}</option>`).join("");
+  document.getElementById("p-supplier").innerHTML = `<option value="">Fournisseur habituel (optionnel)</option>${optionsHtml}`;
+  document.getElementById("m-supplier").innerHTML = `<option value="">Fournisseur (si entrée)</option>${optionsHtml}`;
+}
+
+async function createSupplier() {
+  const errorBox = document.getElementById("supplier-error");
+  errorBox.style.display = "none";
+  const payload = {
+    name: document.getElementById("s-name").value,
+    phone: document.getElementById("s-phone").value || null,
+    address: document.getElementById("s-address").value || null,
+  };
+  if (!payload.name) {
+    errorBox.textContent = "Le nom du fournisseur est requis.";
+    errorBox.style.display = "block";
+    return;
+  }
+  try {
+    await apiFetch("/api/suppliers", { method: "POST", body: JSON.stringify(payload) });
+    document.getElementById("s-name").value = "";
+    document.getElementById("s-phone").value = "";
+    document.getElementById("s-address").value = "";
+    await loadSuppliers();
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.style.display = "block";
+  }
+}
+
+async function showSupplierHistory(supplierId) {
+  const box = document.getElementById("supplier-history");
+  try {
+    const movements = await apiFetch(`/api/suppliers/${supplierId}/movements`);
+    const supplier = suppliers.find((s) => s.id === supplierId);
+    if (movements.length === 0) {
+      box.innerHTML = `<p>Aucune livraison enregistrée pour ${supplier.name}.</p>`;
+      return;
+    }
+    box.innerHTML = `
+      <h3>Historique des livraisons — ${supplier.name}</h3>
+      <table>
+        <thead><tr><th>Date</th><th>Produit</th><th>Qté (unités)</th><th>N° facture</th></tr></thead>
+        <tbody>
+          ${movements
+            .map((m) => {
+              const product = products.find((p) => p.id === m.product_id);
+              return `<tr>
+                <td>${new Date(m.created_at).toLocaleDateString("fr-FR")}</td>
+                <td>${product ? product.name : m.product_id}</td>
+                <td>${m.qty_units}</td>
+                <td>${m.invoice_number || "-"}</td>
+              </tr>`;
+            })
+            .join("")}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    box.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
 }
 
 async function loadProducts() {
@@ -45,6 +126,7 @@ async function createProduct() {
     prix_achat: parseInt(document.getElementById("p-achat").value || "0", 10),
     prix_vente: parseInt(document.getElementById("p-vente").value || "0", 10),
     stock_min_cartons: parseInt(document.getElementById("p-min").value || "5", 10),
+    supplier_id: document.getElementById("p-supplier").value ? parseInt(document.getElementById("p-supplier").value, 10) : null,
   };
   try {
     await apiFetch("/api/products", { method: "POST", body: JSON.stringify(payload) });
@@ -65,6 +147,7 @@ async function createMovement() {
     unit: document.getElementById("m-unit").value,
     invoice_number: document.getElementById("m-invoice").value || null,
     reason: document.getElementById("m-reason").value || null,
+    supplier_id: document.getElementById("m-supplier").value ? parseInt(document.getElementById("m-supplier").value, 10) : null,
   };
   try {
     await apiFetch("/api/stock/movements", { method: "POST", body: JSON.stringify(payload) });

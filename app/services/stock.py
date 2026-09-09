@@ -27,6 +27,7 @@ def create_movement(
     created_by: int,
     invoice_number: str | None = None,
     reason: str | None = None,
+    supplier_id: int | None = None,
 ) -> StockMovement:
     qty_units = convert_to_units(product, qty, unit)
 
@@ -40,6 +41,7 @@ def create_movement(
 
     movement = StockMovement(
         product_id=product.id,
+        supplier_id=supplier_id,
         type=type_,
         qty_units=qty_units,
         invoice_number=invoice_number,

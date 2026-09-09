@@ -32,6 +32,7 @@ def create_movement(
         created_by=current_user.id,
         invoice_number=payload.invoice_number,
         reason=payload.reason,
+        supplier_id=payload.supplier_id,
     )
     logs_service.record(
         db, current_user.id, "stock_movement_created",

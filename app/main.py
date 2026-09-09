@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.routers import auth, cash, customers, products, sales, stats, stock, users
+from app.routers import auth, cash, customers, products, sales, stats, stock, suppliers, users
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -21,6 +21,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(products.router)
 app.include_router(stock.router)
+app.include_router(suppliers.router)
 app.include_router(cash.router)
 app.include_router(sales.router)
 app.include_router(customers.router)
