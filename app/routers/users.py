@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import get_current_user, require_role
 from app.models import Role, User
-from app.schemas import PasswordChange, PasswordReset, UserCreate, UserOut
+from app.schemas import PasswordChange, PasswordReset, UserCreate, UserOut, UserStatusUpdate
 from app.services import users as users_service
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -49,3 +49,19 @@ def reset_user_password(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilisateur introuvable")
     return users_service.reset_password(db, user, payload.new_password)
+
+
+@router.patch("/{user_id}/status", response_model=UserOut)
+def update_user_status(
+    user_id: int,
+    payload: UserStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(Role.ADMIN)),
+):
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilisateur introuvable")
+    try:
+        return users_service.set_active(db, user, current_user, payload.is_active)
+    except users_service.CannotDeactivateSelfError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))

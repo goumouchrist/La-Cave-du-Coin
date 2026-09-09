@@ -47,6 +47,10 @@ class PasswordChange(BaseModel):
     new_password: str = Field(min_length=6)
 
 
+class UserStatusUpdate(BaseModel):
+    is_active: bool
+
+
 # ---------- Products ----------
 
 class ProductCreate(BaseModel):

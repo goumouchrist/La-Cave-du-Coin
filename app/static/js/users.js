@@ -12,7 +12,14 @@ async function loadUsers() {
     .map(
       (u) => `<tr>
         <td>${u.username}</td><td>${u.full_name || "-"}</td><td>${u.role}</td><td>${u.is_active ? "Oui" : "Non"}</td>
-        <td><button class="secondary" onclick="resetPassword(${u.id}, '${u.username}')">Réinitialiser mot de passe</button></td>
+        <td>
+          <button class="secondary" onclick="resetPassword(${u.id}, '${u.username}')">Réinitialiser mot de passe</button>
+          ${
+            u.is_active
+              ? `<button class="danger" onclick="toggleUserStatus(${u.id}, '${u.username}', false)">Désactiver</button>`
+              : `<button class="secondary" onclick="toggleUserStatus(${u.id}, '${u.username}', true)">Réactiver</button>`
+          }
+        </td>
       </tr>`
     )
     .join("");
@@ -24,6 +31,17 @@ async function resetPassword(userId, username) {
   try {
     await apiFetch(`/api/users/${userId}/password`, { method: "PATCH", body: JSON.stringify({ new_password: newPassword }) });
     alert(`Mot de passe de "${username}" mis à jour.`);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function toggleUserStatus(userId, username, activate) {
+  const verb = activate ? "réactiver" : "désactiver";
+  if (!confirm(`Confirmer : ${verb} le compte "${username}" ?`)) return;
+  try {
+    await apiFetch(`/api/users/${userId}/status`, { method: "PATCH", body: JSON.stringify({ is_active: activate }) });
+    await loadUsers();
   } catch (err) {
     alert(err.message);
   }
