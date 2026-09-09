@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>La Cave du Coin — Mon compte</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+  <main>
+    <div class="card">
+      <h2>Changer mon mot de passe</h2>
+      <div id="account-error" class="alert alert-error" style="display:none"></div>
+      <div id="account-success" class="alert alert-success" style="display:none"></div>
+      <input type="password" id="current-password" placeholder="Mot de passe actuel" />
+      <br /><br />
+      <input type="password" id="new-password" placeholder="Nouveau mot de passe (6 caractères minimum)" />
+      <br /><br />
+      <button id="change-password">Valider</button>
+    </div>
+  </main>
+
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/account.js"></script>
+</body>
+</html>

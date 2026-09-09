@@ -61,3 +61,8 @@ def dashboard_page(request: Request):
 @app.get("/users")
 def users_page(request: Request):
     return templates.TemplateResponse(request, "users.html", {})
+
+
+@app.get("/account")
+def account_page(request: Request):
+    return templates.TemplateResponse(request, "account.html", {})

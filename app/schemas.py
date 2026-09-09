@@ -38,6 +38,15 @@ class UserOut(BaseModel):
         from_attributes = True
 
 
+class PasswordReset(BaseModel):
+    new_password: str = Field(min_length=6)
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=6)
+
+
 # ---------- Products ----------
 
 class ProductCreate(BaseModel):

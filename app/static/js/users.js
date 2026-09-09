@@ -10,9 +10,23 @@ async function loadUsers() {
   const users = await apiFetch("/api/users");
   document.getElementById("users-body").innerHTML = users
     .map(
-      (u) => `<tr><td>${u.username}</td><td>${u.full_name || "-"}</td><td>${u.role}</td><td>${u.is_active ? "Oui" : "Non"}</td></tr>`
+      (u) => `<tr>
+        <td>${u.username}</td><td>${u.full_name || "-"}</td><td>${u.role}</td><td>${u.is_active ? "Oui" : "Non"}</td>
+        <td><button class="secondary" onclick="resetPassword(${u.id}, '${u.username}')">Réinitialiser mot de passe</button></td>
+      </tr>`
     )
     .join("");
+}
+
+async function resetPassword(userId, username) {
+  const newPassword = prompt(`Nouveau mot de passe pour "${username}" (6 caractères minimum) :`);
+  if (!newPassword) return;
+  try {
+    await apiFetch(`/api/users/${userId}/password`, { method: "PATCH", body: JSON.stringify({ new_password: newPassword }) });
+    alert(`Mot de passe de "${username}" mis à jour.`);
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function createUser() {

@@ -67,6 +67,7 @@ function renderNavbar(activePage) {
     { href: "/cash", label: "Sessions caisse", roles: ["admin", "manager", "caissier"] },
     { href: "/dashboard", label: "Statistiques", roles: ["admin", "manager"] },
     { href: "/users", label: "Utilisateurs", roles: ["admin"] },
+    { href: "/account", label: "Mon compte", roles: ["admin", "manager", "caissier"] },
   ];
 
   const linksHtml = links
