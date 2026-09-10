@@ -51,6 +51,23 @@ def test_create_sale_decrements_stock_and_computes_change(db_session):
     assert products_service.get_current_stock_units(db_session, product.id) == 98
 
 
+@pytest.mark.parametrize("payment_mode", [PaymentMode.SOUTRA_MONEY, PaymentMode.CREDIT_MONEY, PaymentMode.PAYCARD])
+def test_create_sale_with_new_payment_modes(db_session, payment_mode):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+
+    sale = sales_service.create_sale(
+        db_session, cashier, session_.id, payment_mode, amount_given=5000,
+        items=[{"product_id": product.id, "qty": 1}],
+    )
+
+    assert sale.payment_mode == payment_mode
+    assert sale.status == SaleStatus.VALIDE
+
+
 def test_sale_blocked_when_cash_session_not_open(db_session):
     admin = create_user(db_session, "admin", "pw", Role.ADMIN)
     manager = create_user(db_session, "manager", "pw", Role.MANAGER)

@@ -31,6 +31,9 @@ class PaymentMode(str, enum.Enum):
     MOBILE_MONEY = "mobile_money"
     CREDIT = "credit"
     AVOIR = "avoir"
+    SOUTRA_MONEY = "soutra_money"
+    CREDIT_MONEY = "credit_money"
+    PAYCARD = "paycard"
 
 
 class MovementType(str, enum.Enum):
