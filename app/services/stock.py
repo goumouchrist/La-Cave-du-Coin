@@ -64,7 +64,7 @@ def validate_movement(db: Session, movement: StockMovement, validator: User, app
     if validator.id == movement.created_by:
         raise SelfValidationError("Le mouvement doit être validé par une personne différente de celle qui l'a saisi")
 
-    if movement.type == MovementType.AJUSTEMENT and validator.role != Role.ADMIN:
+    if movement.type == MovementType.AJUSTEMENT and validator.role not in (Role.ADMIN, Role.SUPER_ADMIN):
         raise ValidatorRoleError("Seul l'Admin peut valider un ajustement d'inventaire")
 
     if validator.role == Role.CAISSIER:

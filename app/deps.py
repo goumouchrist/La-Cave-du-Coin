@@ -32,6 +32,11 @@ def get_current_user(
 
 def require_role(*allowed_roles: Role):
     def checker(current_user: User = Depends(get_current_user)) -> User:
+        # Le Super Admin passe partout où un Admin est autorisé (et au-delà) :
+        # il "coiffe" tous les contrôles de rôle existants sans avoir à les
+        # lister un par un.
+        if current_user.role == Role.SUPER_ADMIN:
+            return current_user
         if current_user.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

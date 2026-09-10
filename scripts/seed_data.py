@@ -30,6 +30,7 @@ def seed():
     db = SessionLocal()
     try:
         default_users = [
+            ("superadmin", "SuperAdmin123!", Role.SUPER_ADMIN, "Super Administrateur"),
             ("admin", "Admin123!", Role.ADMIN, "Administrateur"),
             ("manager", "Manager123!", Role.MANAGER, "Manager Boutique"),
             ("caissier", "Caissier123!", Role.CAISSIER, "Caissier Principal"),

@@ -23,9 +23,10 @@ def test_change_own_password_rejects_wrong_current_password(db_session):
 
 
 def test_admin_reset_password_does_not_require_current_password(db_session):
+    admin = users_service.create_user(db_session, "admin1", "pw", Role.ADMIN)
     user = users_service.create_user(db_session, "caissier1", "OldPass123!", Role.CAISSIER)
 
-    users_service.reset_password(db_session, user, "ResetByAdmin789!")
+    users_service.reset_password(db_session, user, "ResetByAdmin789!", admin)
 
     assert users_service.authenticate(db_session, "caissier1", "OldPass123!") is None
     assert users_service.authenticate(db_session, "caissier1", "ResetByAdmin789!") is not None

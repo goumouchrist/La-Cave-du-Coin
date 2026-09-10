@@ -133,7 +133,7 @@ def cancel_sale(db: Session, sale: Sale, canceller: User, reason: str) -> Sale:
     if sale.status == SaleStatus.ANNULEE:
         raise AlreadyCancelledError("Ce ticket est déjà annulé")
 
-    if canceller.role != Role.MANAGER and canceller.role != Role.ADMIN:
+    if canceller.role not in (Role.MANAGER, Role.ADMIN, Role.SUPER_ADMIN):
         elapsed = datetime.now(timezone.utc) - to_aware_utc(sale.created_at)
         if elapsed > timedelta(minutes=settings.CANCEL_WINDOW_MINUTES):
             raise CancelNotAllowedError(

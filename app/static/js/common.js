@@ -41,7 +41,8 @@ function requireAuth(allowedRoles) {
     window.location.href = "/";
     return null;
   }
-  if (allowedRoles && !allowedRoles.includes(auth.role)) {
+  // Le Super Admin a accès à tout, comme côté serveur (require_role).
+  if (auth.role !== "super_admin" && allowedRoles && !allowedRoles.includes(auth.role)) {
     alert("Accès refusé pour votre rôle: " + auth.role);
     window.location.href = "/pos";
     return null;
@@ -106,7 +107,7 @@ function renderNavbar(activePage) {
   ];
 
   const linksHtml = links
-    .filter((l) => !auth || l.roles.includes(auth.role))
+    .filter((l) => !auth || auth.role === "super_admin" || l.roles.includes(auth.role))
     .map(
       (l) =>
         `<a href="${l.href}" class="nav-link ${l.href === activePage ? "active" : ""}">${l.label}</a>`

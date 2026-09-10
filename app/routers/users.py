@@ -11,11 +11,13 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 
 
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def create_user(payload: UserCreate, db: Session = Depends(get_db), _: User = Depends(require_role(Role.ADMIN))):
+def create_user(payload: UserCreate, db: Session = Depends(get_db), current_user: User = Depends(require_role(Role.ADMIN))):
     try:
-        user = users_service.create_user(db, payload.username, payload.password, payload.role, payload.full_name)
+        user = users_service.create_user(db, payload.username, payload.password, payload.role, payload.full_name, current_user)
     except users_service.DuplicateUsernameError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except users_service.InsufficientPrivilegeError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))
     return user
 
 
@@ -43,12 +45,15 @@ def reset_user_password(
     user_id: int,
     payload: PasswordReset,
     db: Session = Depends(get_db),
-    _: User = Depends(require_role(Role.ADMIN)),
+    current_user: User = Depends(require_role(Role.ADMIN)),
 ):
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilisateur introuvable")
-    return users_service.reset_password(db, user, payload.new_password)
+    try:
+        return users_service.reset_password(db, user, payload.new_password, current_user)
+    except users_service.InsufficientPrivilegeError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))
 
 
 @router.patch("/{user_id}/status", response_model=UserOut)
@@ -64,4 +69,6 @@ def update_user_status(
     try:
         return users_service.set_active(db, user, current_user, payload.is_active)
     except users_service.CannotDeactivateSelfError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))
+    except users_service.InsufficientPrivilegeError as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))
