@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.models import Customer, Sale
+from app.models import Customer, CustomerRepayment, Sale
 
 
 class InsufficientCreditError(Exception):
@@ -50,6 +50,17 @@ def record_debt(db: Session, customer: Customer, amount: int) -> Customer:
     db.commit()
     db.refresh(customer)
     return customer
+
+
+def record_repayment(db: Session, customer: Customer, amount: int, processed_by: int) -> CustomerRepayment:
+    """Règlement (partiel ou total) d'une créance : crédite le solde et garde
+    une trace persistante (qui, quand, combien) pour l'audit et le reçu."""
+    credit_account(db, customer, amount)
+    repayment = CustomerRepayment(customer_id=customer.id, amount_gnf=amount, processed_by=processed_by)
+    db.add(repayment)
+    db.commit()
+    db.refresh(repayment)
+    return repayment
 
 
 def list_customers_with_debt(db: Session) -> list[dict]:

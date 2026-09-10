@@ -6,7 +6,7 @@ from reportlab.lib.units import mm as mm_unit
 from reportlab.pdfgen import canvas
 
 from app.config import settings
-from app.models import Product, Sale
+from app.models import CustomerRepayment, Product, Sale
 
 
 RECEIPT_WIDTH = 80 * mm
@@ -110,6 +110,57 @@ def build_receipt_pdf(sale: Sale, products_by_id: dict[int, Product], cashier_na
 
     c.setFont("Helvetica-Oblique", 6)
     c.drawCentredString(RECEIPT_WIDTH / 2, y, "Ticket valable 7 jours pour échange/retour")
+
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def build_repayment_receipt_pdf(repayment: CustomerRepayment, processor_name: str) -> bytes:
+    customer = repayment.customer
+    remaining_owed = max(-customer.credit_balance_gnf, 0)
+
+    height = 78 * mm_unit
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(RECEIPT_WIDTH, height))
+
+    y = height - 10 * mm_unit
+    c.setFont("Helvetica-Bold", 11)
+    c.drawCentredString(RECEIPT_WIDTH / 2, y, settings.STORE_NAME)
+    y -= 5 * mm_unit
+    c.setFont("Helvetica-Bold", 9)
+    c.drawCentredString(RECEIPT_WIDTH / 2, y, "REÇU DE RÈGLEMENT")
+    y -= 8 * mm_unit
+
+    c.setFont("Helvetica", 7)
+    c.drawString(4 * mm_unit, y, f"Reçu n°: RG-{repayment.id}")
+    y -= 4 * mm_unit
+    c.drawString(4 * mm_unit, y, f"Date: {repayment.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
+    y -= 4 * mm_unit
+    c.drawString(4 * mm_unit, y, f"Encaissé par: {processor_name}")
+    y -= 6 * mm_unit
+
+    c.line(4 * mm_unit, y, RECEIPT_WIDTH - 4 * mm_unit, y)
+    y -= 6 * mm_unit
+
+    c.drawString(4 * mm_unit, y, f"Client: {customer.name}")
+    y -= 4 * mm_unit
+    if customer.phone:
+        c.drawString(4 * mm_unit, y, f"Téléphone: {customer.phone}")
+        y -= 4 * mm_unit
+    y -= 2 * mm_unit
+
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(4 * mm_unit, y, f"MONTANT REÇU: {repayment.amount_gnf:,} GNF")
+    y -= 6 * mm_unit
+
+    c.setFont("Helvetica", 7)
+    c.drawString(4 * mm_unit, y, f"Solde restant dû: {remaining_owed:,} GNF")
+    y -= 8 * mm_unit
+
+    c.setFont("Helvetica-Oblique", 6)
+    c.drawCentredString(RECEIPT_WIDTH / 2, y, "Merci de conserver ce reçu comme preuve de paiement")
 
     c.showPage()
     c.save()

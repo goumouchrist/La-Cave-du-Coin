@@ -220,6 +220,18 @@ class Customer(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class CustomerRepayment(Base):
+    __tablename__ = "customer_repayments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"))
+    amount_gnf: Mapped[int] = mapped_column(Integer)
+    processed_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    customer: Mapped["Customer"] = relationship()
+
+
 class Return(Base):
     __tablename__ = "returns"
 

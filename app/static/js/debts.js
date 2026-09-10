@@ -46,12 +46,20 @@ async function repayDebt(customerId) {
   const amount = parseInt(input.value || "0", 10);
   if (amount <= 0) return;
   const errorBox = document.getElementById("debts-error");
+  const resultBox = document.getElementById("debts-result");
   errorBox.style.display = "none";
+  resultBox.innerHTML = "";
   try {
-    await apiFetch(`/api/customers/${customerId}/repay-debt`, {
+    const repayment = await apiFetch(`/api/customers/${customerId}/repay-debt`, {
       method: "POST",
       body: JSON.stringify({ amount }),
     });
+    resultBox.innerHTML = `
+      <div class="alert alert-success">
+        Règlement de ${formatGNF(repayment.amount_gnf)} enregistré pour ${repayment.customer.name}.
+        <button class="secondary" onclick="openAuthenticatedPdf('/api/customers/repayments/${repayment.id}/receipt.pdf')">Imprimer le reçu</button>
+      </div>
+    `;
     await loadDebts();
   } catch (err) {
     errorBox.textContent = err.message;

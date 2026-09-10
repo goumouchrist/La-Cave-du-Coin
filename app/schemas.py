@@ -256,6 +256,18 @@ class DebtRepayment(BaseModel):
     amount: int = Field(gt=0)
 
 
+class RepaymentOut(BaseModel):
+    id: int
+    customer_id: int
+    amount_gnf: int
+    processed_by: int
+    created_at: datetime
+    customer: CustomerOut
+
+    class Config:
+        from_attributes = True
+
+
 class ReturnItemIn(BaseModel):
     sale_item_id: int
     qty: int = Field(gt=0)

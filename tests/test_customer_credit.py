@@ -127,3 +127,53 @@ def test_repay_debt_reduces_balance(db_session):
     db_session.refresh(customer)
     assert customer.credit_balance_gnf == 0
     assert customers_service.list_customers_with_debt(db_session) == []
+
+
+def test_record_repayment_persists_a_repayment_record(db_session):
+    admin, manager, cashier, product, session_ = _setup(db_session)
+
+    sale = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.CREDIT, amount_given=1000,
+        items=[{"product_id": product.id, "qty": 2}],
+        customer_name="Fatou Camara", customer_phone="+224600000001",
+    )
+
+    from app.models import Customer
+    customer = db_session.get(Customer, sale.customer_id)
+    owed = sale.total_amount - 1000
+
+    repayment = customers_service.record_repayment(db_session, customer, owed, processed_by=manager.id)
+
+    assert repayment.id is not None
+    assert repayment.amount_gnf == owed
+    assert repayment.processed_by == manager.id
+    assert repayment.customer.id == customer.id
+
+    db_session.refresh(customer)
+    assert customer.credit_balance_gnf == 0
+
+
+def test_repay_debt_endpoint_logs_action_and_returns_receipt(db_session, client, auth_headers):
+    _, manager, cashier, product, session_ = _setup(db_session)
+    headers = auth_headers("apiadmin", Role.ADMIN)
+
+    sale = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.CREDIT, amount_given=1000,
+        items=[{"product_id": product.id, "qty": 2}],
+        customer_name="Fatou Camara", customer_phone="+224600000001",
+    )
+    owed = sale.total_amount - 1000
+
+    res = client.post(f"/api/customers/{sale.customer_id}/repay-debt", json={"amount": owed}, headers=headers)
+    assert res.status_code == 201, res.text
+    repayment = res.json()
+    assert repayment["amount_gnf"] == owed
+    assert repayment["customer"]["credit_balance_gnf"] == 0
+
+    from app.models import Log
+    log = db_session.query(Log).filter(Log.action == "debt_repaid").first()
+    assert log is not None
+
+    pdf_res = client.get(f"/api/customers/repayments/{repayment['id']}/receipt.pdf", headers=headers)
+    assert pdf_res.status_code == 200
+    assert pdf_res.content[:4] == b"%PDF"
