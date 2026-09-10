@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api/stock", tags=["stock"])
 @router.get("/movements/import/template")
 def download_movement_import_template():
     return Response(
-        content=movement_import_service.CSV_TEMPLATE,
+        content="﻿" + movement_import_service.CSV_TEMPLATE,
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=modele_mouvements.csv"},
     )

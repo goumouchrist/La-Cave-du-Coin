@@ -40,7 +40,7 @@ def download_import_template():
     """Modèle CSV sans données sensibles : accessible sans authentification
     pour permettre un simple lien de téléchargement depuis le navigateur."""
     return Response(
-        content=product_import_service.CSV_TEMPLATE,
+        content="﻿" + product_import_service.CSV_TEMPLATE,
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=modele_produits.csv"},
     )
