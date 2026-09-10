@@ -80,7 +80,7 @@ def build_receipt_pdf(sale: Sale, products_by_id: dict[int, Product], cashier_na
         y -= 4 * mm_unit
 
     c.setFont("Helvetica", 7)
-    c.drawString(4 * mm_unit, y, f"Reçu: {sale.amount_given:,} GNF")
+    c.drawString(4 * mm_unit, y, f"Règlement reçu: {sale.amount_given:,} GNF")
     y -= 4 * mm_unit
     c.drawString(4 * mm_unit, y, f"Monnaie rendue: {sale.change_amount:,} GNF")
     y -= 4 * mm_unit
