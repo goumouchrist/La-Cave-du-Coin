@@ -127,6 +127,7 @@ async function loadProducts() {
               ? `<button class="secondary" onclick="openAuthenticatedPdf('/api/products/${p.id}/label.pdf')">Imprimer étiquette</button>`
               : `<button class="secondary" onclick="generateBarcode(${p.id})">Générer code interne</button>`
           }
+          <button class="danger" onclick="deleteProduct(${p.id})">Supprimer</button>
         </td>
       </tr>`
     )
@@ -134,6 +135,16 @@ async function loadProducts() {
 
   const select = document.getElementById("m-product");
   select.innerHTML = products.map((p) => `<option value="${p.id}">${p.name}</option>`).join("");
+}
+
+async function deleteProduct(productId) {
+  if (!confirm("Supprimer ce produit ? L'historique des ventes déjà enregistrées sera conservé.")) return;
+  try {
+    await apiFetch(`/api/products/${productId}`, { method: "DELETE" });
+    await loadProducts();
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function generateBarcode(productId) {

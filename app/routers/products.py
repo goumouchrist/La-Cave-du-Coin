@@ -58,6 +58,14 @@ async def import_products(
     return ProductImportResult(created=result.created, errors=result.errors)
 
 
+@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_product(product_id: int, db: Session = Depends(get_db), _: User = Depends(require_role(Role.ADMIN))):
+    product = db.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produit introuvable")
+    products_service.deactivate_product(db, product)
+
+
 @router.get("/barcode/{barcode}", response_model=ProductOut)
 def get_by_barcode(barcode: str, db: Session = Depends(get_db), _: User = Depends(require_role(Role.ADMIN, Role.MANAGER, Role.CAISSIER))):
     product = products_service.find_by_barcode(db, barcode)

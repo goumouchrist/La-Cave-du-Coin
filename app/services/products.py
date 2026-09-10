@@ -79,6 +79,19 @@ def create_product(db: Session, data: dict, is_promo: bool = False) -> Product:
     return product
 
 
+def deactivate_product(db: Session, product: Product) -> Product:
+    """Désactive le produit (suppression logique) : il n'apparaît plus dans le
+    catalogue/la caisse, mais son historique de ventes et de mouvements reste
+    intact pour la traçabilité. Le code-barres est libéré (mis à None) pour
+    pouvoir être réutilisé par un nouveau produit sans violer la contrainte
+    d'unicité en base."""
+    product.is_active = False
+    product.barcode = None
+    db.commit()
+    db.refresh(product)
+    return product
+
+
 def generate_internal_barcode(db: Session, product: Product, force: bool = False) -> Product:
     """Attribue un code interne unique (QR code) à un produit qui n'a pas de
     code-barres fournisseur — basé sur l'id du produit, donc toujours unique

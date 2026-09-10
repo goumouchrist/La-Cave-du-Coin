@@ -25,6 +25,25 @@ def make_product(db_session, **overrides):
     return product
 
 
+def test_deactivate_product_hides_it_and_frees_barcode(db_session):
+    product = make_product(db_session, barcode="6001234500017")
+
+    products_service.deactivate_product(db_session, product)
+
+    assert product.is_active is False
+    assert product.barcode is None
+
+    # Le code-barres libéré peut être réutilisé par un nouveau produit actif
+    new_product = products_service.create_product(
+        db_session,
+        dict(
+            name="Nouveau produit", category="Sodas", barcode="6001234500017",
+            unit_carton_qty=24, unit_pack_qty=6, prix_achat=3000, prix_vente=5000, stock_min_cartons=5,
+        ),
+    )
+    assert new_product.barcode == "6001234500017"
+
+
 def test_unit_conversion_carton_and_pack(db_session):
     product = make_product(db_session)
     assert products_service.convert_to_units(product, 2, "carton") == 48
