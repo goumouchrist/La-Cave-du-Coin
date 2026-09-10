@@ -24,7 +24,7 @@ def upgrade() -> None:
     # ENUM natif : il faut y ajouter explicitement la nouvelle valeur.
     bind = op.get_bind()
     if bind.dialect.name == "postgresql":
-        op.execute("ALTER TYPE role ADD VALUE IF NOT EXISTS 'super_admin'")
+        op.execute("ALTER TYPE role ADD VALUE IF NOT EXISTS 'SUPER_ADMIN'")  # SQLAlchemy stocke le NOM du membre, pas sa valeur
 
 
 def downgrade() -> None:

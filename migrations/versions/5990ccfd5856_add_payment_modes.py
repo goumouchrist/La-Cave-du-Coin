@@ -18,7 +18,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-NEW_VALUES = ["soutra_money", "credit_money", "paycard"]
+NEW_VALUES = ["SOUTRA_MONEY", "CREDIT_MONEY", "PAYCARD"]  # SQLAlchemy stocke le NOM du membre, pas sa valeur
 
 
 def upgrade() -> None:
