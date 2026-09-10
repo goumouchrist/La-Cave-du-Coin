@@ -1,5 +1,11 @@
 const AUTH_KEY = "cave_du_coin_auth";
 
+// Déconnexion automatique après ce délai d'inactivité (aucun clic/frappe/scroll).
+// N'affecte jamais la session de caisse ni les ventes déjà enregistrées : tout
+// est stocké côté serveur, une reconnexion avec le même compte reprend là où
+// on en était (la caisse reste ouverte).
+const INACTIVITY_TIMEOUT_MINUTES = 15;
+
 function getAuth() {
   const raw = localStorage.getItem(AUTH_KEY);
   return raw ? JSON.parse(raw) : null;
@@ -9,9 +15,24 @@ function setAuth(auth) {
   localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
 }
 
-function logout() {
+function logout(reason) {
   localStorage.removeItem(AUTH_KEY);
-  window.location.href = "/";
+  window.location.href = reason ? `/?reason=${reason}` : "/";
+}
+
+let inactivityTimer = null;
+
+function setupInactivityLogout() {
+  const resetTimer = () => {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => logout("inactivity"), INACTIVITY_TIMEOUT_MINUTES * 60 * 1000);
+  };
+
+  ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "click"].forEach((evt) =>
+    document.addEventListener(evt, resetTimer, { passive: true })
+  );
+
+  resetTimer();
 }
 
 function requireAuth(allowedRoles) {
@@ -25,6 +46,7 @@ function requireAuth(allowedRoles) {
     window.location.href = "/pos";
     return null;
   }
+  setupInactivityLogout();
   return auth;
 }
 

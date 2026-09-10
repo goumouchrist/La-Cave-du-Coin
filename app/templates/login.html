@@ -12,6 +12,7 @@
     <div class="login-box">
       <img src="/static/img/logo.png" alt="La Cave du Coin" />
       <h2 class="brand-title">La Cave du Coin</h2>
+      <div id="info" class="alert alert-success" style="display:none"></div>
       <div id="error" class="alert alert-error" style="display:none"></div>
       <form id="login-form">
         <input type="text" id="username" placeholder="Identifiant" required />
@@ -22,6 +23,13 @@
   </div>
   <script src="/static/js/common.js"></script>
   <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reason") === "inactivity") {
+      const infoBox = document.getElementById("info");
+      infoBox.textContent = "Vous avez été déconnecté après une période d'inactivité. Vos ventes et la session de caisse ne sont pas affectées.";
+      infoBox.style.display = "block";
+    }
+
     document.getElementById("login-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const username = document.getElementById("username").value;
