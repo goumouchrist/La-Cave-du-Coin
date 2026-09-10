@@ -127,6 +127,7 @@ main {
   border-radius: 10px;
   padding: 20px;
   margin-bottom: 20px;
+  overflow-x: auto;
 }
 
 .card h2 {
@@ -211,7 +212,7 @@ th {
   border: 1px solid var(--gold);
   border-radius: 12px;
   padding: 36px;
-  width: 320px;
+  width: min(320px, 90vw);
   text-align: center;
   animation: nav-brand-fade-in 0.6s ease-out;
 }
@@ -258,5 +259,27 @@ th {
 @media (max-width: 700px) {
   .grid-2 {
     grid-template-columns: 1fr;
+  }
+
+  main {
+    padding: 0 10px;
+    margin: 14px auto;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  #navbar {
+    padding: 10px 14px;
+  }
+
+  th, td {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+  }
+
+  table {
+    min-width: 480px;
   }
 }
