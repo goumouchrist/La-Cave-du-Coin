@@ -18,6 +18,10 @@ class CustomerRequiredError(Exception):
     pass
 
 
+class CreditLimitExceededError(Exception):
+    pass
+
+
 class InsufficientStockError(Exception):
     pass
 
@@ -116,6 +120,13 @@ def create_sale(
                     raise CustomerRequiredError(
                         "Le paiement à crédit avec un reste à payer nécessite les informations du client "
                         "(nom, téléphone, adresse)"
+                    )
+                active_credits = customers_service.count_active_credits(db, customer)
+                if active_credits >= settings.CREDIT_LIMIT_PER_CUSTOMER:
+                    raise CreditLimitExceededError(
+                        f"Le client {customer.name} a dépassé le nombre de crédits autorisés "
+                        f"({settings.CREDIT_LIMIT_PER_CUSTOMER}) : {active_credits} crédit(s) en cours non réglé(s). "
+                        "Le compteur revient à zéro une fois toutes ses créances réglées."
                     )
                 customers_service.record_debt(db, customer, remaining_due)
 

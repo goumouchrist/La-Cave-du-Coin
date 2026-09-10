@@ -53,14 +53,41 @@ def record_debt(db: Session, customer: Customer, amount: int) -> Customer:
 
 
 def record_repayment(db: Session, customer: Customer, amount: int, processed_by: int) -> CustomerRepayment:
-    """Règlement (partiel ou total) d'une créance : crédite le solde et garde
-    une trace persistante (qui, quand, combien) pour l'audit et le reçu."""
+    """Règlement (partiel ou total) d'une créance : crédite le solde, répartit
+    le montant sur les ventes à crédit encore dues (de la plus ancienne
+    échéance à la plus récente) et garde une trace persistante (qui, quand,
+    combien) pour l'audit et le reçu."""
     credit_account(db, customer, amount)
+    _allocate_repayment_to_sales(db, customer, amount)
     repayment = CustomerRepayment(customer_id=customer.id, amount_gnf=amount, processed_by=processed_by)
     db.add(repayment)
     db.commit()
     db.refresh(repayment)
     return repayment
+
+
+def _allocate_repayment_to_sales(db: Session, customer: Customer, amount: int) -> None:
+    remaining = amount
+    due_sales = (
+        db.query(Sale)
+        .filter(Sale.customer_id == customer.id, Sale.remaining_due_gnf > 0)
+        .order_by(Sale.due_date.asc().nullslast(), Sale.created_at.asc())
+        .all()
+    )
+    for sale in due_sales:
+        if remaining <= 0:
+            break
+        applied = min(sale.remaining_due_gnf, remaining)
+        sale.remaining_due_gnf -= applied
+        remaining -= applied
+    db.commit()
+
+
+def count_active_credits(db: Session, customer: Customer) -> int:
+    """Nombre de ventes à crédit encore (partiellement) impayées pour ce
+    client : retombe naturellement à 0 dès que tout est réglé, grâce à
+    _allocate_repayment_to_sales qui met à jour remaining_due_gnf par vente."""
+    return db.query(Sale).filter(Sale.customer_id == customer.id, Sale.remaining_due_gnf > 0).count()
 
 
 def list_customers_with_debt(db: Session) -> list[dict]:

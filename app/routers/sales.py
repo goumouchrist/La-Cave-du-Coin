@@ -47,6 +47,13 @@ def create_sale(payload: SaleCreate, request: Request, db: Session = Depends(get
             customer_address=payload.customer_address,
             due_date=payload.due_date,
         )
+    except sales_service.CreditLimitExceededError as exc:
+        logs_service.record(
+            db, current_user.id, "credit_limit_exceeded",
+            {"customer_id": payload.customer_id, "customer_name": payload.customer_name, "detail": str(exc)},
+            client_ip(request),
+        )
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
     except SALES_SERVICE_ERRORS as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
 

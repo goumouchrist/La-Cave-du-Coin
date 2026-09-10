@@ -177,3 +177,105 @@ def test_repay_debt_endpoint_logs_action_and_returns_receipt(db_session, client,
     pdf_res = client.get(f"/api/customers/repayments/{repayment['id']}/receipt.pdf", headers=headers)
     assert pdf_res.status_code == 200
     assert pdf_res.content[:4] == b"%PDF"
+
+
+def test_third_unpaid_credit_sale_is_blocked_at_threshold(db_session):
+    admin, manager, cashier, product, session_ = _setup(db_session)
+    customer = customers_service.find_or_create_customer(db_session, "Fatou Camara", "+224600000001")
+
+    for _ in range(2):
+        sales_service.create_sale(
+            db_session, cashier, session_.id, PaymentMode.CREDIT, amount_given=1000,
+            items=[{"product_id": product.id, "qty": 1}],
+            customer_id=customer.id,
+        )
+
+    with pytest.raises(sales_service.CreditLimitExceededError):
+        sales_service.create_sale(
+            db_session, cashier, session_.id, PaymentMode.CREDIT, amount_given=1000,
+            items=[{"product_id": product.id, "qty": 1}],
+            customer_id=customer.id,
+        )
+
+
+def test_credit_limit_resets_once_all_debts_are_repaid(db_session):
+    admin, manager, cashier, product, session_ = _setup(db_session)
+    customer = customers_service.find_or_create_customer(db_session, "Fatou Camara", "+224600000001")
+
+    for _ in range(2):
+        sales_service.create_sale(
+            db_session, cashier, session_.id, PaymentMode.CREDIT, amount_given=1000,
+            items=[{"product_id": product.id, "qty": 1}],
+            customer_id=customer.id,
+        )
+
+    db_session.refresh(customer)
+    owed = -customer.credit_balance_gnf
+    customers_service.record_repayment(db_session, customer, owed, processed_by=manager.id)
+
+    assert customers_service.count_active_credits(db_session, customer) == 0
+
+    # Le compteur étant retombé à zéro, une nouvelle vente à crédit repasse.
+    sale = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.CREDIT, amount_given=1000,
+        items=[{"product_id": product.id, "qty": 1}],
+        customer_id=customer.id,
+    )
+    assert sale.remaining_due_gnf > 0
+
+
+def test_repayment_is_allocated_oldest_due_date_first(db_session):
+    admin, manager, cashier, product, session_ = _setup(db_session)
+    customer = customers_service.find_or_create_customer(db_session, "Fatou Camara", "+224600000001")
+
+    sale1 = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.CREDIT, amount_given=1000,
+        items=[{"product_id": product.id, "qty": 1}],
+        customer_id=customer.id, due_date=date(2026, 9, 15),
+    )
+    sale2 = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.CREDIT, amount_given=1000,
+        items=[{"product_id": product.id, "qty": 1}],
+        customer_id=customer.id, due_date=date(2026, 9, 30),
+    )
+
+    db_session.refresh(customer)
+    # Règle juste assez pour éteindre la première créance (la plus ancienne échéance).
+    customers_service.record_repayment(db_session, customer, sale1.remaining_due_gnf, processed_by=manager.id)
+
+    db_session.refresh(sale1)
+    db_session.refresh(sale2)
+    assert sale1.remaining_due_gnf == 0
+    assert sale2.remaining_due_gnf == product.prix_vente - 1000
+    assert customers_service.count_active_credits(db_session, customer) == 1
+
+
+def test_credit_limit_exceeded_logs_a_trace_via_api(db_session, client, auth_headers):
+    admin, manager, cashier, product, session_ = _setup(db_session)
+    headers = auth_headers("apiadmin", Role.ADMIN)
+    customer = customers_service.find_or_create_customer(db_session, "Fatou Camara", "+224600000001")
+
+    for _ in range(2):
+        sales_service.create_sale(
+            db_session, cashier, session_.id, PaymentMode.CREDIT, amount_given=1000,
+            items=[{"product_id": product.id, "qty": 1}],
+            customer_id=customer.id,
+        )
+
+    res = client.post(
+        "/api/sales",
+        json={
+            "cash_session_id": session_.id,
+            "payment_mode": "credit",
+            "amount_given": 1000,
+            "items": [{"product_id": product.id, "qty": 1}],
+            "customer_id": customer.id,
+        },
+        headers=headers,
+    )
+    assert res.status_code == 422
+    assert "dépassé" in res.json()["detail"]
+
+    from app.models import Log
+    log = db_session.query(Log).filter(Log.action == "credit_limit_exceeded").first()
+    assert log is not None
