@@ -1,4 +1,4 @@
-from app.models import Product
+from app.models import Product, Supplier
 from app.services.product_import import import_products_from_csv
 
 
@@ -71,3 +71,36 @@ def test_import_reports_non_numeric_price(db_session):
 
     assert result.created == []
     assert "non numérique" in result.errors[0]["error"]
+
+
+def test_import_creates_supplier_from_name_and_links_it(db_session):
+    csv_text = (
+        "name,category,prix_achat,prix_vente,supplier\n"
+        "Coca-Cola 33cl,Sodas,3000,5000,Brasserie de Guinée\n"
+    )
+
+    result = import_products_from_csv(db_session, csv_text)
+
+    assert result.created == ["Coca-Cola 33cl"]
+    product = db_session.query(Product).first()
+    supplier = db_session.query(Supplier).first()
+    assert supplier.name == "Brasserie de Guinée"
+    assert product.supplier_id == supplier.id
+
+
+def test_import_reuses_existing_supplier_by_name(db_session):
+    existing = Supplier(name="Brasserie de Guinée")
+    db_session.add(existing)
+    db_session.commit()
+
+    csv_text = (
+        "name,category,prix_achat,prix_vente,supplier\n"
+        "Coca-Cola 33cl,Sodas,3000,5000,Brasserie de Guinée\n"
+        "Fanta Orange 33cl,Sodas,3000,5000,brasserie de guinée\n"
+    )
+
+    import_products_from_csv(db_session, csv_text)
+
+    assert db_session.query(Supplier).count() == 1
+    products = db_session.query(Product).all()
+    assert all(p.supplier_id == existing.id for p in products)

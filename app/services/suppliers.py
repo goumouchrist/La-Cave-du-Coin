@@ -11,6 +11,15 @@ def create_supplier(db: Session, name: str, phone: str | None, address: str | No
     return supplier
 
 
+def find_or_create_supplier_by_name(db: Session, name: str) -> Supplier:
+    """Recherche insensible à la casse ; crée le fournisseur s'il n'existe pas
+    encore (utilisé par les imports CSV, où on ne connaît que le nom)."""
+    existing = db.query(Supplier).filter(Supplier.name.ilike(name.strip())).first()
+    if existing:
+        return existing
+    return create_supplier(db, name.strip(), None, None)
+
+
 def list_suppliers(db: Session) -> list[Supplier]:
     return db.query(Supplier).filter(Supplier.is_active.is_(True)).all()
 

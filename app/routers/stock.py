@@ -1,15 +1,37 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import client_ip, get_current_user, require_role
 from app.models import Product, Role, StockMovement, User
-from app.schemas import ProductOut, StockMovementCreate, StockMovementOut, StockMovementValidate
+from app.schemas import ProductImportResult, ProductOut, StockMovementCreate, StockMovementOut, StockMovementValidate
 from app.services import logs as logs_service
+from app.services import movement_import as movement_import_service
 from app.services import products as products_service
 from app.services import stock as stock_service
 
 router = APIRouter(prefix="/api/stock", tags=["stock"])
+
+
+@router.get("/movements/import/template")
+def download_movement_import_template():
+    return Response(
+        content=movement_import_service.CSV_TEMPLATE,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=modele_mouvements.csv"},
+    )
+
+
+@router.post("/movements/import", response_model=ProductImportResult)
+async def import_movements(
+    file: UploadFile,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(Role.ADMIN, Role.MANAGER)),
+):
+    raw = await file.read()
+    csv_text = raw.decode("utf-8-sig")
+    result = movement_import_service.import_movements_from_csv(db, csv_text, created_by=current_user.id)
+    return ProductImportResult(created=result.created, errors=result.errors)
 
 
 @router.post("/movements", response_model=StockMovementOut, status_code=status.HTTP_201_CREATED)

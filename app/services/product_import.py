@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from sqlalchemy.orm import Session
 
 from app.services import products as products_service
+from app.services import suppliers as suppliers_service
 
 REQUIRED_COLUMNS = {"name", "category", "prix_achat", "prix_vente"}
 OPTIONAL_DEFAULTS = {
@@ -15,9 +16,9 @@ OPTIONAL_DEFAULTS = {
 }
 
 CSV_TEMPLATE = (
-    "barcode,name,category,unit_carton_qty,unit_pack_qty,prix_achat,prix_vente,stock_min_cartons\n"
-    "6001234500017,Coca-Cola 33cl,Sodas,24,6,3000,5000,5\n"
-    "6001234500024,Fanta Orange 33cl,Sodas,24,6,3000,5000,5\n"
+    "barcode,name,category,unit_carton_qty,unit_pack_qty,prix_achat,prix_vente,stock_min_cartons,supplier\n"
+    "6001234500017,Coca-Cola 33cl,Sodas,24,6,3000,5000,5,Brasserie de Guinée\n"
+    "6001234500024,Fanta Orange 33cl,Sodas,24,6,3000,5000,5,Brasserie de Guinée\n"
 )
 
 
@@ -56,6 +57,9 @@ def import_products_from_csv(db: Session, csv_text: str) -> ImportResult:
     for line_number, row in enumerate(reader, start=2):  # ligne 1 = en-tête
         try:
             data = _parse_row(row)
+            supplier_name = (row.get("supplier") or "").strip()
+            if supplier_name:
+                data["supplier_id"] = suppliers_service.find_or_create_supplier_by_name(db, supplier_name).id
             product = products_service.create_product(db, data)
             result.created.append(product.name)
         except (ValueError, products_service.PriceBelowMinMarginError, products_service.DuplicateBarcodeError) as exc:

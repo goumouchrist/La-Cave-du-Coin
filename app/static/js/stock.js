@@ -8,6 +8,7 @@ async function init() {
   document.getElementById("create-product").addEventListener("click", createProduct);
   document.getElementById("create-movement").addEventListener("click", createMovement);
   document.getElementById("import-submit").addEventListener("click", importCsv);
+  document.getElementById("import-movement-submit").addEventListener("click", importMovementsCsv);
   document.getElementById("create-supplier").addEventListener("click", createSupplier);
 
   await loadSuppliers();
@@ -293,6 +294,49 @@ async function importCsv() {
     `;
     fileInput.value = "";
     await loadProducts();
+  } catch (err) {
+    resultBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+async function importMovementsCsv() {
+  const resultBox = document.getElementById("import-movement-result");
+  resultBox.innerHTML = "";
+
+  const fileInput = document.getElementById("import-movement-file");
+  const file = fileInput.files[0];
+  if (!file) {
+    resultBox.innerHTML = `<div class="alert alert-error">Choisissez un fichier CSV.</div>`;
+    return;
+  }
+
+  const auth = getAuth();
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch("/api/stock/movements/import", {
+      method: "POST",
+      headers: { Authorization: "Bearer " + auth.access_token },
+      body: formData,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(body.detail || "Erreur d'import");
+    }
+    const result = await res.json();
+
+    const errorsHtml = result.errors.length
+      ? `<ul>${result.errors.map((e) => `<li>Ligne ${e.line}: ${e.error}</li>`).join("")}</ul>`
+      : "";
+    resultBox.innerHTML = `
+      <div class="alert ${result.errors.length ? "alert-error" : "alert-success"}">
+        ${result.created.length} mouvement(s) créé(s), en attente de validation : ${result.created.join(", ") || "aucun"}.
+        ${result.errors.length ? `${result.errors.length} ligne(s) en erreur :${errorsHtml}` : ""}
+      </div>
+    `;
+    fileInput.value = "";
+    await loadPendingMovements();
   } catch (err) {
     resultBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
   }

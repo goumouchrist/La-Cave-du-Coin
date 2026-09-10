@@ -94,14 +94,30 @@
     <div class="card">
       <h2>Import du catalogue (CSV)</h2>
       <p style="color:var(--text-dim); font-size:0.85rem">
-        Colonnes attendues : <code>barcode,name,category,unit_carton_qty,unit_pack_qty,prix_achat,prix_vente,stock_min_cartons</code>
-        (seuls <code>name</code>, <code>category</code>, <code>prix_achat</code>, <code>prix_vente</code> sont obligatoires).
+        Colonnes attendues : <code>barcode,name,category,unit_carton_qty,unit_pack_qty,prix_achat,prix_vente,stock_min_cartons,supplier</code>
+        (seuls <code>name</code>, <code>category</code>, <code>prix_achat</code>, <code>prix_vente</code> sont obligatoires —
+        <code>supplier</code> est le nom du fournisseur, créé automatiquement s'il n'existe pas encore).
       </p>
       <a href="/api/products/import/template" id="download-template">Télécharger le modèle CSV</a>
       <br /><br />
       <input type="file" id="import-file" accept=".csv" />
       <button id="import-submit">Importer</button>
       <div id="import-result"></div>
+    </div>
+
+    <div class="card">
+      <h2>Import de mouvements de stock (CSV)</h2>
+      <p style="color:var(--text-dim); font-size:0.85rem">
+        Colonnes attendues : <code>barcode,type,qty,unit,invoice_number,reason,supplier</code>
+        (<code>barcode</code>, <code>type</code> et <code>qty</code> obligatoires — <code>type</code> parmi
+        entree/casse/don/ajustement ; <code>unit</code> parmi unite/carton/pack, "unite" par défaut).
+        Chaque ligne créée reste <b>en attente de validation</b> par une 2<sup>e</sup> personne, comme pour une saisie manuelle.
+      </p>
+      <a href="/api/stock/movements/import/template" id="download-movement-template">Télécharger le modèle CSV</a>
+      <br /><br />
+      <input type="file" id="import-movement-file" accept=".csv" />
+      <button id="import-movement-submit">Importer</button>
+      <div id="import-movement-result"></div>
     </div>
 
     <div class="card">
