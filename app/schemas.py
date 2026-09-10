@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -189,7 +189,11 @@ class SaleCreate(BaseModel):
     payment_mode: PaymentMode
     amount_given: int = Field(ge=0)
     items: list[SaleItemIn]
-    customer_id: int | None = Field(default=None, description="Requis si payment_mode = avoir")
+    customer_id: int | None = Field(default=None, description="Requis si payment_mode = avoir, ou pour un client crédit déjà connu")
+    customer_name: str | None = Field(default=None, description="Nouveau client crédit (si customer_id non fourni)")
+    customer_phone: str | None = None
+    customer_address: str | None = None
+    due_date: date | None = Field(default=None, description="Date de remboursement prévue (mode crédit)")
 
 
 class SaleItemOut(BaseModel):
@@ -213,6 +217,8 @@ class SaleOut(BaseModel):
     total_amount: int
     amount_given: int
     change_amount: int
+    remaining_due_gnf: int
+    due_date: date | None
     status: SaleStatus
     print_count: int
     created_at: datetime
@@ -232,10 +238,22 @@ class CustomerOut(BaseModel):
     id: int
     name: str
     phone: str | None
+    address: str | None
     credit_balance_gnf: int
 
     class Config:
         from_attributes = True
+
+
+class DebtOut(BaseModel):
+    customer: CustomerOut
+    amount_owed_gnf: int
+    oldest_due_date: date | None
+    most_recent_sale_at: datetime | None
+
+
+class DebtRepayment(BaseModel):
+    amount: int = Field(gt=0)
 
 
 class ReturnItemIn(BaseModel):

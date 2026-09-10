@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/png" href="/static/img/logo.png" />
+  <title>La Cave du Coin — Créances clients</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+  <main>
+    <div class="card">
+      <h2>Créances clients à relancer</h2>
+      <p>Clients ayant acheté à crédit sans régler le montant total. Triés par ancienneté de la dette la plus urgente.</p>
+      <div id="debts-error" class="alert alert-error" style="display:none"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Téléphone</th>
+            <th>Adresse</th>
+            <th>Montant dû</th>
+            <th>Échéance</th>
+            <th>Dernière vente à crédit</th>
+            <th>Règlement</th>
+          </tr>
+        </thead>
+        <tbody id="debts-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="/static/js/common.js"></script>
+  <script src="/static/js/debts.js"></script>
+</body>
+</html>

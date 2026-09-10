@@ -102,6 +102,7 @@ function renderNavbar(activePage) {
     { href: "/stock", label: "Stock", roles: ["admin", "manager"] },
     { href: "/cash", label: "Sessions caisse", roles: ["admin", "manager", "caissier"] },
     { href: "/dashboard", label: "Statistiques", roles: ["admin", "manager"] },
+    { href: "/debts", label: "Créances clients", roles: ["admin", "manager", "caissier"] },
     { href: "/users", label: "Utilisateurs", roles: ["admin"] },
     { href: "/account", label: "Mon compte", roles: ["admin", "manager", "caissier"] },
   ];

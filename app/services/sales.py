@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -46,6 +46,10 @@ def create_sale(
     amount_given: int,
     items: list[dict],
     customer_id: int | None = None,
+    customer_name: str | None = None,
+    customer_phone: str | None = None,
+    customer_address: str | None = None,
+    due_date: date | None = None,
 ) -> Sale:
     session_ = db.get(CashSession, cash_session_id)
     if session_ is None or session_.status != CashSessionStatus.OPEN:
@@ -58,6 +62,13 @@ def create_sale(
         customer = db.get(Customer, customer_id)
         if customer is None:
             raise CustomerRequiredError(f"Client introuvable (id={customer_id})")
+    elif payment_mode == PaymentMode.CREDIT:
+        if customer_id:
+            customer = db.get(Customer, customer_id)
+            if customer is None:
+                raise CustomerRequiredError(f"Client introuvable (id={customer_id})")
+        elif customer_name:
+            customer = customers_service.find_or_create_customer(db, customer_name, customer_phone, customer_address)
 
     sale_items: list[SaleItem] = []
     total = 0
@@ -91,12 +102,22 @@ def create_sale(
             )
         )
 
+    remaining_due = 0
     if payment_mode == PaymentMode.AVOIR:
         customers_service.debit_account(db, customer, total)
         amount_given = total
         change = 0
     else:
         change = round_gnf(max(amount_given - total, 0))
+        if payment_mode == PaymentMode.CREDIT:
+            remaining_due = round_gnf(max(total - amount_given, 0))
+            if remaining_due > 0:
+                if customer is None:
+                    raise CustomerRequiredError(
+                        "Le paiement à crédit avec un reste à payer nécessite les informations du client "
+                        "(nom, téléphone, adresse)"
+                    )
+                customers_service.record_debt(db, customer, remaining_due)
 
     sale = Sale(
         transaction_number=generate_transaction_number(),
@@ -107,6 +128,8 @@ def create_sale(
         total_amount=total,
         amount_given=amount_given,
         change_amount=change,
+        remaining_due_gnf=remaining_due,
+        due_date=due_date if remaining_due > 0 else None,
         status=SaleStatus.VALIDE,
     )
     sale.items = sale_items

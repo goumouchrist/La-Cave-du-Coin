@@ -42,6 +42,10 @@ def create_sale(payload: SaleCreate, request: Request, db: Session = Depends(get
             payload.amount_given,
             [item.model_dump() for item in payload.items],
             customer_id=payload.customer_id,
+            customer_name=payload.customer_name,
+            customer_phone=payload.customer_phone,
+            customer_address=payload.customer_address,
+            due_date=payload.due_date,
         )
     except SALES_SERVICE_ERRORS as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))

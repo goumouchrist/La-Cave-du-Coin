@@ -1,8 +1,9 @@
 import enum
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     Enum,
     Float,
@@ -157,6 +158,8 @@ class Sale(Base):
     total_amount: Mapped[int] = mapped_column(Integer)
     amount_given: Mapped[int] = mapped_column(Integer, default=0)
     change_amount: Mapped[int] = mapped_column(Integer, default=0)
+    remaining_due_gnf: Mapped[int] = mapped_column(Integer, default=0)
+    due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[SaleStatus] = mapped_column(Enum(SaleStatus), default=SaleStatus.VALIDE)
     cancelled_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     cancel_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -209,6 +212,10 @@ class Customer(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(120))
     phone: Mapped[str | None] = mapped_column(String(30), unique=True, index=True, nullable=True)
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Solde signé : positif = avoir (la boutique doit au client, ex. suite à un
+    # retour), négatif = dette (le client doit à la boutique, ex. vente à
+    # crédit non intégralement payée).
     credit_balance_gnf: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 

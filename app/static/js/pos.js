@@ -3,6 +3,7 @@ const IDENTICAL_ITEMS_CONFIRM_THRESHOLD = 5;
 let cart = []; // { product_id, name, prix_vente, qty, quantity_confirmed }
 let currentSession = null;
 let avoirCustomer = null;
+let creditCustomer = null;
 let returnSale = null;
 
 async function init() {
@@ -28,6 +29,7 @@ async function init() {
   document.getElementById("validate-sale").addEventListener("click", validateSale);
   document.getElementById("payment-mode").addEventListener("change", onPaymentModeChange);
   document.getElementById("avoir-lookup").addEventListener("click", lookupAvoirCustomer);
+  document.getElementById("credit-lookup").addEventListener("click", lookupCreditCustomer);
   document.getElementById("return-search").addEventListener("click", searchReturnSale);
   document.getElementById("return-submit").addEventListener("click", submitReturn);
 
@@ -38,9 +40,38 @@ async function init() {
 function onPaymentModeChange() {
   const mode = document.getElementById("payment-mode").value;
   document.getElementById("avoir-fields").style.display = mode === "avoir" ? "block" : "none";
+  document.getElementById("credit-fields").style.display = mode === "credit" ? "block" : "none";
   if (mode !== "avoir") {
     avoirCustomer = null;
     document.getElementById("avoir-balance").textContent = "";
+  }
+  if (mode !== "credit") {
+    creditCustomer = null;
+    document.getElementById("credit-found").textContent = "";
+  }
+}
+
+async function lookupCreditCustomer() {
+  const phone = document.getElementById("credit-phone").value.trim();
+  const foundBox = document.getElementById("credit-found");
+  creditCustomer = null;
+  if (!phone) {
+    foundBox.textContent = "Saisissez un numéro de téléphone.";
+    return;
+  }
+  try {
+    const results = await apiFetch(`/api/customers/search?phone=${encodeURIComponent(phone)}`);
+    if (results.length === 0) {
+      foundBox.textContent = "Aucun client existant avec ce numéro : renseignez son nom et son adresse ci-dessous.";
+      return;
+    }
+    creditCustomer = results[0];
+    document.getElementById("credit-name").value = creditCustomer.name;
+    document.getElementById("credit-address").value = creditCustomer.address || "";
+    const owed = creditCustomer.credit_balance_gnf < 0 ? -creditCustomer.credit_balance_gnf : 0;
+    foundBox.textContent = `${creditCustomer.name} — dette actuelle : ${formatGNF(owed)}`;
+  } catch (err) {
+    foundBox.textContent = err.message;
   }
 }
 
@@ -194,24 +225,44 @@ async function validateSale() {
     return;
   }
 
+  const amountGiven = parseInt(document.getElementById("amount-given").value || "0", 10);
+  const creditName = document.getElementById("credit-name").value.trim();
+  if (paymentMode === "credit" && amountGiven < cartTotal() && !creditCustomer && !creditName) {
+    resultBox.innerHTML = `<div class="alert alert-error">Montant remis insuffisant : renseignez le client (nom, téléphone, adresse) pour enregistrer le reste dû.</div>`;
+    return;
+  }
+
   const payload = {
     cash_session_id: currentSession.id,
     payment_mode: paymentMode,
-    amount_given: parseInt(document.getElementById("amount-given").value || "0", 10),
+    amount_given: amountGiven,
     items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, quantity_confirmed: l.quantity_confirmed })),
-    customer_id: paymentMode === "avoir" ? avoirCustomer.id : null,
+    customer_id: paymentMode === "avoir" ? avoirCustomer.id : paymentMode === "credit" && creditCustomer ? creditCustomer.id : null,
+    customer_name: paymentMode === "credit" && !creditCustomer ? creditName || null : null,
+    customer_phone: paymentMode === "credit" && !creditCustomer ? document.getElementById("credit-phone").value.trim() || null : null,
+    customer_address: paymentMode === "credit" && !creditCustomer ? document.getElementById("credit-address").value.trim() || null : null,
+    due_date: paymentMode === "credit" ? document.getElementById("credit-due-date").value || null : null,
   };
 
   try {
     const sale = await apiFetch("/api/sales", { method: "POST", body: JSON.stringify(payload) });
+    const dueNotice = sale.remaining_due_gnf > 0
+      ? ` Reste dû par le client : ${formatGNF(sale.remaining_due_gnf)}${sale.due_date ? ` (échéance : ${sale.due_date})` : ""}. Voir "Créances clients" pour la relance.`
+      : "";
     resultBox.innerHTML = `
       <div class="alert alert-success">
-        Vente #${sale.transaction_number} enregistrée. Monnaie à rendre : ${formatGNF(sale.change_amount)}.
+        Vente #${sale.transaction_number} enregistrée. Monnaie à rendre : ${formatGNF(sale.change_amount)}.${dueNotice}
         <button class="secondary" onclick="openAuthenticatedPdf('/api/sales/${sale.id}/receipt.pdf')">Imprimer le reçu</button>
       </div>
     `;
     cart = [];
     document.getElementById("amount-given").value = 0;
+    document.getElementById("credit-name").value = "";
+    document.getElementById("credit-phone").value = "";
+    document.getElementById("credit-address").value = "";
+    document.getElementById("credit-due-date").value = "";
+    document.getElementById("credit-found").textContent = "";
+    creditCustomer = null;
     renderCart();
   } catch (err) {
     resultBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;

@@ -66,3 +66,8 @@ def users_page(request: Request):
 @app.get("/account")
 def account_page(request: Request):
     return templates.TemplateResponse(request, "account.html", {})
+
+
+@app.get("/debts")
+def debts_page(request: Request):
+    return templates.TemplateResponse(request, "debts.html", {})

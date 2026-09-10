@@ -46,6 +46,18 @@
         <button id="avoir-lookup" class="secondary">Vérifier le solde</button>
         <p id="avoir-balance"></p>
       </div>
+      <div id="credit-fields" style="display:none">
+        <p>Si le montant remis est inférieur au total, le reste sera enregistré comme une créance à relancer plus tard.</p>
+        <input type="text" id="credit-phone" placeholder="Téléphone du client (recherche client existant)" />
+        <button id="credit-lookup" class="secondary">Rechercher</button>
+        <p id="credit-found"></p>
+        <input type="text" id="credit-name" placeholder="Nom et prénom du client" />
+        <br /><br />
+        <input type="text" id="credit-address" placeholder="Adresse du client" />
+        <br /><br />
+        <label>Date de remboursement prévue</label>
+        <input type="date" id="credit-due-date" />
+      </div>
       <label>Montant remis par le client (GNF)</label>
       <input type="number" id="amount-given" value="0" />
       <p>Monnaie à rendre : <strong id="change-amount">0 GNF</strong></p>

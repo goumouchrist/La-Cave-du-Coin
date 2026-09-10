@@ -27,7 +27,7 @@ def compute_total_tva(sale: Sale, products_by_id: dict[int, Product]) -> int:
 def build_receipt_pdf(sale: Sale, products_by_id: dict[int, Product], cashier_name: str, is_duplicata: bool) -> bytes:
     total_tva = compute_total_tva(sale, products_by_id)
 
-    height = (120 + len(sale.items) * 8 + (6 if total_tva else 0)) * mm_unit
+    height = (120 + len(sale.items) * 8 + (6 if total_tva else 0) + (8 if sale.remaining_due_gnf else 0)) * mm_unit
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(RECEIPT_WIDTH, height))
 
@@ -85,7 +85,18 @@ def build_receipt_pdf(sale: Sale, products_by_id: dict[int, Product], cashier_na
     c.drawString(4 * mm_unit, y, f"Monnaie rendue: {sale.change_amount:,} GNF")
     y -= 4 * mm_unit
     c.drawString(4 * mm_unit, y, f"Mode de paiement: {sale.payment_mode.value}")
-    y -= 6 * mm_unit
+    y -= 4 * mm_unit
+
+    if sale.remaining_due_gnf:
+        c.setFont("Helvetica-Bold", 7)
+        c.drawString(4 * mm_unit, y, f"RESTE DU: {sale.remaining_due_gnf:,} GNF")
+        y -= 4 * mm_unit
+        if sale.due_date:
+            c.setFont("Helvetica", 6.5)
+            c.drawString(4 * mm_unit, y, f"A regler avant le: {sale.due_date.strftime('%Y-%m-%d')}")
+            y -= 4 * mm_unit
+
+    y -= 2 * mm_unit
 
     qr_img = qrcode.make(sale.transaction_number)
     qr_buffer = io.BytesIO()
