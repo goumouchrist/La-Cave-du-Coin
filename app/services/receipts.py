@@ -12,8 +12,22 @@ from app.models import Product, Sale
 RECEIPT_WIDTH = 80 * mm
 
 
+def compute_total_tva(sale: Sale, products_by_id: dict[int, Product]) -> int:
+    """Montant de TVA inclus dans le total, à titre informatif (le prix de
+    vente affiché/facturé ne change pas, cf. décision produit : pas de TVA
+    ajoutée pour l'instant, seulement un affichage informatif si un taux a
+    été renseigné sur le produit)."""
+    return sum(
+        round(item.unit_price * item.qty_units * products_by_id[item.product_id].tva_rate)
+        for item in sale.items
+        if products_by_id.get(item.product_id) and products_by_id[item.product_id].tva_rate
+    )
+
+
 def build_receipt_pdf(sale: Sale, products_by_id: dict[int, Product], cashier_name: str, is_duplicata: bool) -> bytes:
-    height = (120 + len(sale.items) * 8) * mm_unit
+    total_tva = compute_total_tva(sale, products_by_id)
+
+    height = (120 + len(sale.items) * 8 + (6 if total_tva else 0)) * mm_unit
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(RECEIPT_WIDTH, height))
 
@@ -59,6 +73,12 @@ def build_receipt_pdf(sale: Sale, products_by_id: dict[int, Product], cashier_na
     c.setFont("Helvetica-Bold", 9)
     c.drawString(4 * mm_unit, y, f"TOTAL: {sale.total_amount:,} GNF")
     y -= 5 * mm_unit
+
+    if total_tva:
+        c.setFont("Helvetica-Oblique", 6.5)
+        c.drawString(4 * mm_unit, y, f"Dont TVA: {total_tva:,} GNF")
+        y -= 4 * mm_unit
+
     c.setFont("Helvetica", 7)
     c.drawString(4 * mm_unit, y, f"Reçu: {sale.amount_given:,} GNF")
     y -= 4 * mm_unit

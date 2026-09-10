@@ -122,6 +122,10 @@ async function loadProducts() {
         <td>${p.stock_min_cartons} carton(s)</td>
         <td>${formatGNF(p.prix_vente)}</td>
         <td>
+          ${(p.tva_rate * 100).toFixed(2)}%
+          <button class="secondary" onclick="editTvaRate(${p.id}, ${p.tva_rate})">Modifier</button>
+        </td>
+        <td>
           ${
             p.barcode
               ? `<button class="secondary" onclick="openAuthenticatedPdf('/api/products/${p.id}/label.pdf')">Imprimer étiquette</button>`
@@ -135,6 +139,22 @@ async function loadProducts() {
 
   const select = document.getElementById("m-product");
   select.innerHTML = products.map((p) => `<option value="${p.id}">${p.name}</option>`).join("");
+}
+
+async function editTvaRate(productId, currentRate) {
+  const input = prompt("Taux de TVA en % (ex: 18 pour 18%) :", (currentRate * 100).toFixed(2));
+  if (input === null) return;
+  const percent = parseFloat(input.replace(",", "."));
+  if (isNaN(percent) || percent < 0 || percent > 100) {
+    alert("Veuillez entrer un pourcentage valide entre 0 et 100.");
+    return;
+  }
+  try {
+    await apiFetch(`/api/products/${productId}/price`, { method: "PATCH", body: JSON.stringify({ tva_rate: percent / 100 }) });
+    await loadProducts();
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function deleteProduct(productId) {
@@ -168,6 +188,7 @@ async function createProduct() {
     prix_achat: parseInt(document.getElementById("p-achat").value || "0", 10),
     prix_vente: parseInt(document.getElementById("p-vente").value || "0", 10),
     stock_min_cartons: parseInt(document.getElementById("p-min").value || "5", 10),
+    tva_rate: parseFloat(document.getElementById("p-tva").value || "0") / 100,
     supplier_id: document.getElementById("p-supplier").value ? parseInt(document.getElementById("p-supplier").value, 10) : null,
   };
   try {

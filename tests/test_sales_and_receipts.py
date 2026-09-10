@@ -157,3 +157,23 @@ def test_receipt_pdf_is_generated(db_session):
 
     pdf_bytes = receipts_service.build_receipt_pdf(sale, {product.id: product}, "Caissier Test", is_duplicata=False)
     assert pdf_bytes[:4] == b"%PDF"
+
+
+def test_receipt_pdf_with_tva_is_generated(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager)
+    product.tva_rate = 0.18
+    db_session.commit()
+
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+    sale = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.ESPECES, amount_given=5000,
+        items=[{"product_id": product.id, "qty": 1}],
+    )
+
+    assert receipts_service.compute_total_tva(sale, {product.id: product}) == round(product.prix_vente * 0.18)
+
+    pdf_bytes = receipts_service.build_receipt_pdf(sale, {product.id: product}, "Caissier Test", is_duplicata=False)
+    assert pdf_bytes[:4] == b"%PDF"

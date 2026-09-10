@@ -29,6 +29,8 @@
         <br /><br />
         <input type="number" id="p-min" placeholder="Seuil alerte (cartons)" value="5" />
         <br /><br />
+        <input type="number" id="p-tva" placeholder="Taux de TVA % (optionnel, ex: 18)" value="0" step="0.01" />
+        <br /><br />
         <select id="p-supplier">
           <option value="">Fournisseur habituel (optionnel)</option>
         </select>
@@ -105,7 +107,7 @@
     <div class="card">
       <h2>Produits & stock courant</h2>
       <table>
-        <thead><tr><th>Nom</th><th>Catégorie</th><th>Code-barres</th><th>Stock (unités)</th><th>Seuil alerte</th><th>Prix vente</th><th>Étiquette</th></tr></thead>
+        <thead><tr><th>Nom</th><th>Catégorie</th><th>Code-barres</th><th>Stock (unités)</th><th>Seuil alerte</th><th>Prix vente</th><th>TVA</th><th>Étiquette</th></tr></thead>
         <tbody id="products-body"></tbody>
       </table>
     </div>

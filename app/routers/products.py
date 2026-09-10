@@ -124,6 +124,8 @@ def update_price(
 
     product.prix_achat = new_achat
     product.prix_vente = new_vente
+    if payload.tva_rate is not None:
+        product.tva_rate = payload.tva_rate
     db.commit()
     db.refresh(product)
     return _to_out(db, product)

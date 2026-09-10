@@ -69,6 +69,7 @@ class ProductCreate(BaseModel):
 class ProductUpdatePrice(BaseModel):
     prix_achat: int | None = Field(default=None, ge=0)
     prix_vente: int | None = Field(default=None, ge=0)
+    tva_rate: float | None = Field(default=None, ge=0, le=1)
     is_promo: bool = False
 
 
