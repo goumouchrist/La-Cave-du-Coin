@@ -207,7 +207,7 @@ async function validateSale() {
     resultBox.innerHTML = `
       <div class="alert alert-success">
         Vente #${sale.transaction_number} enregistrée. Monnaie à rendre : ${formatGNF(sale.change_amount)}.
-        <a href="/api/sales/${sale.id}/receipt.pdf" target="_blank">Imprimer le reçu</a>
+        <button class="secondary" onclick="openAuthenticatedPdf('/api/sales/${sale.id}/receipt.pdf')">Imprimer le reçu</button>
       </div>
     `;
     cart = [];

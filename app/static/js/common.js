@@ -52,6 +52,19 @@ async function apiFetch(path, options = {}) {
   return res;
 }
 
+async function openAuthenticatedPdf(url) {
+  const auth = getAuth();
+  const res = await fetch(url, { headers: { Authorization: "Bearer " + auth.access_token } });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: res.statusText }));
+    alert(body.detail || "Erreur lors de la génération du PDF");
+    return;
+  }
+  const blob = await res.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  window.open(blobUrl, "_blank");
+}
+
 function formatGNF(amount) {
   return new Intl.NumberFormat("fr-FR").format(amount) + " GNF";
 }

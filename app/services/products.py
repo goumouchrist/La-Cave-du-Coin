@@ -17,6 +17,10 @@ class DuplicateBarcodeError(Exception):
     pass
 
 
+class BarcodeAlreadySetError(Exception):
+    pass
+
+
 def convert_to_units(product: Product, qty: int, unit: str) -> int:
     """Convertit une quantité exprimée en carton/pack/unité vers l'unité de base."""
     if unit == UNIT_CARTON:
@@ -70,6 +74,21 @@ def create_product(db: Session, data: dict, is_promo: bool = False) -> Product:
             raise DuplicateBarcodeError(f"Le code-barres {data['barcode']} est déjà utilisé par un produit actif")
     product = Product(**data)
     db.add(product)
+    db.commit()
+    db.refresh(product)
+    return product
+
+
+def generate_internal_barcode(db: Session, product: Product, force: bool = False) -> Product:
+    """Attribue un code interne unique (QR code) à un produit qui n'a pas de
+    code-barres fournisseur — basé sur l'id du produit, donc toujours unique
+    sans avoir besoin de vérifier les doublons."""
+    if product.barcode and not force:
+        raise BarcodeAlreadySetError(
+            f"Le produit '{product.name}' a déjà un code-barres ({product.barcode}) — "
+            "utilisez force=true pour le remplacer."
+        )
+    product.barcode = f"INT{product.id:08d}"
     db.commit()
     db.refresh(product)
     return product

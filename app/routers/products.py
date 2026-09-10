@@ -5,6 +5,7 @@ from app.database import get_db
 from app.deps import require_role
 from app.models import Product, Role, User
 from app.schemas import ProductCreate, ProductImportResult, ProductOut, ProductUpdatePrice
+from app.services import labels as labels_service
 from app.services import product_import as product_import_service
 from app.services import products as products_service
 
@@ -63,6 +64,35 @@ def get_by_barcode(barcode: str, db: Session = Depends(get_db), _: User = Depend
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produit inconnu")
     return _to_out(db, product)
+
+
+@router.post("/{product_id}/generate-barcode", response_model=ProductOut)
+def generate_barcode(
+    product_id: int,
+    force: bool = False,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_role(Role.ADMIN, Role.MANAGER)),
+):
+    product = db.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produit introuvable")
+    try:
+        products_service.generate_internal_barcode(db, product, force=force)
+    except products_service.BarcodeAlreadySetError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    return _to_out(db, product)
+
+
+@router.get("/{product_id}/label.pdf")
+def get_product_label(product_id: int, db: Session = Depends(get_db), _: User = Depends(require_role(Role.ADMIN, Role.MANAGER))):
+    product = db.get(Product, product_id)
+    if not product:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produit introuvable")
+    if not product.barcode:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Ce produit n'a pas encore de code-barres — générez-le d'abord")
+
+    pdf_bytes = labels_service.build_product_label_pdf(product)
+    return Response(content=pdf_bytes, media_type="application/pdf")
 
 
 @router.patch("/{product_id}/price", response_model=ProductOut)

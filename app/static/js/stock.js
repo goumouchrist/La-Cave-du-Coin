@@ -121,12 +121,28 @@ async function loadProducts() {
         <td>${p.current_stock_units}</td>
         <td>${p.stock_min_cartons} carton(s)</td>
         <td>${formatGNF(p.prix_vente)}</td>
+        <td>
+          ${
+            p.barcode
+              ? `<button class="secondary" onclick="openAuthenticatedPdf('/api/products/${p.id}/label.pdf')">Imprimer étiquette</button>`
+              : `<button class="secondary" onclick="generateBarcode(${p.id})">Générer code interne</button>`
+          }
+        </td>
       </tr>`
     )
     .join("");
 
   const select = document.getElementById("m-product");
   select.innerHTML = products.map((p) => `<option value="${p.id}">${p.name}</option>`).join("");
+}
+
+async function generateBarcode(productId) {
+  try {
+    await apiFetch(`/api/products/${productId}/generate-barcode`, { method: "POST" });
+    await loadProducts();
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function createProduct() {
