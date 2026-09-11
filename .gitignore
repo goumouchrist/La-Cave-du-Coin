@@ -4,6 +4,8 @@ __pycache__/
 .pytest_cache/
 *.db
 .env
+.env.staging
 receipt*.pdf
 server.log
 backups/
+staging_refresh.log

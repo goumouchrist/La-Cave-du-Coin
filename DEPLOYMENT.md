@@ -222,6 +222,57 @@ DBeaver. Le second port transféré (`8001`) permet aussi d'ouvrir l'application
 web de staging elle-même dans un navigateur, sur `http://localhost:8001`, si
 besoin de tester une fonctionnalité avec des données réelles sans risque.
 
+### Alternative sans tunnel SSH : pgAdmin en HTTPS
+
+Un poste géré (proxy d'entreprise qui bloque les connexions brutes/SSH) ne
+peut pas ouvrir de tunnel SSH. Dans ce cas, **pgAdmin** (interface web pour
+PostgreSQL) donne accès aux mêmes requêtes SQL via une simple page HTTPS,
+comme l'application elle-même.
+
+**Prérequis DNS** — chez votre registrar/DNS (pas sur le VPS), ajouter un
+enregistrement `A` pour un sous-domaine dédié, pointant vers l'IP du VPS,
+par exemple `pgadmin.lacaveducoin.com`.
+
+**Une seule fois, sur le VPS** — créer le réseau Docker partagé entre les
+deux stacks (prod et staging) qui permettra à Caddy de router vers pgAdmin :
+```bash
+docker network create caddy_net
+```
+
+Dans `.env.staging`, ajouter/vérifier les deux lignes (déjà présentes dans
+`.env.staging.example`, avec des valeurs par défaut à changer) :
+```
+PGADMIN_DEFAULT_EMAIL=admin@lacaveducoin.com
+PGADMIN_DEFAULT_PASSWORD=ChangeMePgAdmin123
+```
+(l'adresse n'a pas besoin d'être réelle ; vous pouvez la laisser telle quelle
+pour éviter de taper un `@` dans la console).
+
+Dans le `.env` de **production** (pas `.env.staging`), ajouter la ligne :
+```
+PGADMIN_DOMAIN=pgadmin.lacaveducoin.com
+```
+
+Puis relancer les deux stacks pour qu'ils prennent en compte ces changements :
+```bash
+./scripts/refresh_staging_from_prod.sh
+docker compose up -d --build
+```
+(la deuxième commande redémarre Caddy avec la nouvelle route ; elle relit le
+`.env` de prod, sans toucher au reste de la production déjà en ligne).
+
+**Première connexion** : ouvrir `https://pgadmin.lacaveducoin.com`, se
+connecter avec `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD`, puis
+ajouter un nouveau serveur PostgreSQL (clic droit sur "Servers" → "Register
+→ Server") :
+- Onglet "General" → Name : `Staging` (libre)
+- Onglet "Connection" → Host : `db`, Port : `5432`, Maintenance database :
+  `cave_du_coin`, Username : `cave_du_coin`, Password : celui de
+  `POSTGRES_PASSWORD` dans `.env.staging`
+
+Une fois enregistré, la connexion est mémorisée par pgAdmin (dans son propre
+volume) — pas besoin de la ressaisir à chaque visite.
+
 ### ⚠️ Point d'attention
 
 Chaque rafraîchissement copie les **vraies données clients** de production

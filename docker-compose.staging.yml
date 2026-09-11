@@ -9,3 +9,29 @@ services:
   app:
     ports:
       - "127.0.0.1:8001:8000"
+
+  # Interface web pour interroger la base staging depuis un navigateur (via
+  # Caddy/HTTPS, cf. Caddyfile + PGADMIN_DOMAIN dans le .env de prod) plutôt
+  # que via un tunnel SSH — utile quand le tunnel SSH n'est pas utilisable
+  # (ex: poste géré interceptant les connexions brutes/SSH).
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@lacaveducoin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-change-me}
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - default
+      - caddy_net
+
+volumes:
+  pgadmin_data:
+
+networks:
+  caddy_net:
+    name: caddy_net
+    external: true

@@ -1,3 +1,9 @@
 {$PUBLIC_DOMAIN} {
 	reverse_proxy app:8000
 }
+
+# Environnement de test ISO prod (staging) : voir DEPLOYMENT.md.
+# N'a d'effet que si PGADMIN_DOMAIN est renseigné dans le .env de prod.
+{$PGADMIN_DOMAIN} {
+	reverse_proxy pgadmin:80
+}
