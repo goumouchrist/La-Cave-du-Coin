@@ -145,6 +145,92 @@ git pull   # ou re-scp les fichiers modifiés
 docker compose up -d --build   # réapplique aussi les migrations Alembic automatiquement
 ```
 
+## Environnement de test ISO prod (staging)
+
+Un second stack Docker, sur le **même VPS**, avec sa propre base PostgreSQL et
+sa propre application — même code, mais données et base totalement séparées
+de la production. Sert à faire des requêtes/tests sans aucun risque pour la
+prod. Remis à jour automatiquement **une fois par mois** avec une copie
+fraîche des données de production (et du code le plus récent).
+
+### Vue d'ensemble
+
+```
+[VPS]
+ ├─ stack "prod"     : app (port interne) + db (port interne) → Caddy → https://...
+ └─ stack "staging"  : app (127.0.0.1:8001) + db (127.0.0.1:55432)
+                        accessibles uniquement via tunnel SSH depuis votre PC
+```
+
+Les ports de staging sont liés à `127.0.0.1` sur le VPS : **jamais exposés sur
+internet**, même en cas d'oubli de configuration du pare-feu. Seul un tunnel
+SSH permet d'y accéder depuis votre PC.
+
+### Mise en place (une seule fois)
+
+```bash
+cd /opt/La_Cave_du_Coin
+cp .env.staging.example .env.staging
+nano .env.staging
+```
+
+Renseigner `POSTGRES_PASSWORD` et `JWT_SECRET` (voir le fichier : préférez des
+valeurs **uniquement alphanumériques**, pour éviter les caractères que la
+console web Hetzner déforme à la frappe — `:`, `"`, `$`, `(`, `)`, `_`, `@`...).
+
+Premier démarrage + première copie des données de prod (peut prendre 1-2
+minutes) :
+
+```bash
+chmod +x scripts/refresh_staging_from_prod.sh
+./scripts/refresh_staging_from_prod.sh
+```
+
+### Planifier la mise à jour mensuelle
+
+Plutôt que de taper une ligne `crontab -e` remplie de caractères spéciaux
+(risqué avec le bug de clavier de la console Hetzner), copier directement le
+fichier déjà préparé dans le dépôt :
+
+```bash
+cp deploy/staging-refresh.cron /etc/cron.d/staging-refresh
+```
+
+Cela exécute `scripts/refresh_staging_from_prod.sh` à 2h du matin le 1er de
+chaque mois (résultat journalisé dans `staging_refresh.log`). Vérifier après
+coup :
+
+```bash
+cat staging_refresh.log
+```
+
+### Se connecter avec DBeaver (via tunnel SSH)
+
+Depuis votre PC, ouvrir un tunnel SSH vers le VPS :
+
+```bash
+ssh -L 55432:127.0.0.1:55432 -L 8001:127.0.0.1:8001 root@<ip-du-vps>
+```
+
+Puis dans DBeaver, nouvelle connexion PostgreSQL :
+- Host : `localhost`, Port : `55432`
+- Base : `cave_du_coin`, Utilisateur : `cave_du_coin`, Mot de passe : celui de
+  `POSTGRES_PASSWORD` dans `.env.staging`
+
+Le tunnel doit rester ouvert (terminal SSH connecté) pendant l'utilisation de
+DBeaver. Le second port transféré (`8001`) permet aussi d'ouvrir l'application
+web de staging elle-même dans un navigateur, sur `http://localhost:8001`, si
+besoin de tester une fonctionnalité avec des données réelles sans risque.
+
+### ⚠️ Point d'attention
+
+Chaque rafraîchissement copie les **vraies données clients** de production
+(noms, téléphones, adresses, soldes) dans l'environnement de test. Comme c'est
+votre propre activité et qu'il n'y a pas de tiers impliqué, ce n'est pas un
+problème de conformité en soi — gardez simplement le même niveau de vigilance
+sur l'accès à cet environnement (mots de passe forts, tunnel SSH uniquement)
+que sur la prod elle-même.
+
 ---
 
 # Option B — PC de la boutique en réseau local

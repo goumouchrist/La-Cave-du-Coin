@@ -1,0 +1,11 @@
+services:
+  db:
+    # Uniquement accessible depuis le VPS lui-même (127.0.0.1) : jamais
+    # exposé sur internet, même avec pare-feu. Connexion via tunnel SSH
+    # (cf. DEPLOYMENT.md, section "Environnement de test ISO prod").
+    ports:
+      - "127.0.0.1:55432:5432"
+
+  app:
+    ports:
+      - "127.0.0.1:8001:8000"

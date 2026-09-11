@@ -1,0 +1,1 @@
+0 2 1 * * root /opt/La_Cave_du_Coin/scripts/refresh_staging_from_prod.sh >> /opt/La_Cave_du_Coin/staging_refresh.log 2>&1
