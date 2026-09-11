@@ -8,6 +8,8 @@ const PAYMENT_MODE_LABELS = {
   avoir: "Avoir",
 };
 
+const AUTO_REFRESH_INTERVAL_MS = 15000;
+
 async function init() {
   requireAuth(["admin", "manager", "caissier"]);
   renderNavbar("/cash");
@@ -16,6 +18,10 @@ async function init() {
 
   document.getElementById("open-session").addEventListener("click", openSession);
   document.getElementById("close-session").addEventListener("click", closeSession);
+
+  // La session peut évoluer depuis la page Caisse (autre onglet/collègue) :
+  // on rafraîchit périodiquement pour que le suivi reste à jour en temps réel.
+  setInterval(refreshStatus, AUTO_REFRESH_INTERVAL_MS);
 }
 
 async function refreshStatus() {
@@ -41,6 +47,21 @@ async function refreshStatus() {
         .join("")
     : `<tr><td colspan="2">Aucune vente enregistrée sur cette session pour l'instant.</td></tr>`;
   summaryBox.style.display = "block";
+
+  const movements = await apiFetch(`/api/cash-sessions/${session.id}/cash-movements`);
+  document.getElementById("cash-movements-body").innerHTML = movements.length
+    ? movements
+        .map(
+          (m) => `
+          <tr>
+            <td>${new Date(m.created_at).toLocaleTimeString("fr-FR")}</td>
+            <td>${m.transaction_number}</td>
+            <td>${formatGNF(m.amount)}</td>
+            <td><b>${formatGNF(m.running_total)}</b></td>
+          </tr>`
+        )
+        .join("")
+    : `<tr><td colspan="4">Aucune vente en espèces enregistrée sur cette session pour l'instant (fond de caisse initial : ${formatGNF(session.opening_amount)}).</td></tr>`;
 }
 
 const CAN_RESOLVE_ROLES = ["manager", "admin", "super_admin"];

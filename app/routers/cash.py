@@ -4,7 +4,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import client_ip, get_current_user, require_role
 from app.models import CashSession, Role, User
-from app.schemas import CashSessionClose, CashSessionOpen, CashSessionOut, CashSessionResolve, CashSessionSummary
+from app.schemas import (
+    CashMovementOut,
+    CashSessionClose,
+    CashSessionOpen,
+    CashSessionOut,
+    CashSessionResolve,
+    CashSessionSummary,
+)
 from app.services import cash as cash_service
 from app.services import logs as logs_service
 
@@ -67,6 +74,14 @@ def get_session_summary(session_id: int, db: Session = Depends(get_db), _: User 
     if not session_:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session introuvable")
     return cash_service.compute_summary(db, session_)
+
+
+@router.get("/{session_id}/cash-movements", response_model=list[CashMovementOut])
+def get_cash_movements(session_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    session_ = db.get(CashSession, session_id)
+    if not session_:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session introuvable")
+    return cash_service.list_cash_movements(db, session_)
 
 
 @router.post("/{session_id}/resolve", response_model=CashSessionOut)

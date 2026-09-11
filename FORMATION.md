@@ -170,6 +170,15 @@ tiroir. **Seul le total Espèces doit se retrouver physiquement dans le
 tiroir** : les autres modes (Mobile Money, Paycard, Crédit...) ne mettent pas
 d'argent liquide en caisse.
 
+En dessous, un tableau **"Mouvements espèces de la session"** liste chaque
+vente payée en espèces au fil de la journée (heure, numéro de transaction,
+montant) avec un **total cumulé** qui part du fond de caisse initial et
+s'additionne à chaque vente. À tout moment de la journée — pas seulement à la
+fermeture — ce total cumulé doit correspondre exactement à ce qu'il y a
+physiquement dans le tiroir. La page se rafraîchit automatiquement toutes les
+15 secondes, ce qui permet à un Manager de suivre la caisse en temps réel
+depuis un autre poste pendant que le caissier vend.
+
 Pour fermer :
 1. Compter physiquement l'argent présent dans la caisse.
 2. Saisir ce **montant physique compté** dans le champ dédié.

@@ -191,6 +191,15 @@ class CashSessionSummary(BaseModel):
     sales_count: int
 
 
+class CashMovementOut(BaseModel):
+    sale_id: int
+    transaction_number: str
+    cashier_id: int
+    amount: int
+    running_total: int
+    created_at: datetime
+
+
 # ---------- Sales ----------
 
 class SaleItemIn(BaseModel):

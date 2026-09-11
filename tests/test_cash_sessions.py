@@ -210,3 +210,66 @@ def test_resolve_endpoint_requires_manager_role_and_logs_action(db_session, clie
     from app.models import Log
     log = db_session.query(Log).filter(Log.action == "cash_session_resolved").first()
     assert log is not None
+
+
+def test_cash_movements_lists_only_cash_sales_with_running_total(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = _setup_product_with_stock(db_session, admin, manager)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=10000)
+
+    sale1 = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.ESPECES, amount_given=5000,
+        items=[{"product_id": product.id, "qty": 1}],
+    )
+    sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.PAYCARD, amount_given=5000,
+        items=[{"product_id": product.id, "qty": 1}],
+    )
+    sale3 = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.ESPECES, amount_given=5000,
+        items=[{"product_id": product.id, "qty": 1}],
+    )
+
+    movements = cash_service.list_cash_movements(db_session, session_)
+
+    assert [m["sale_id"] for m in movements] == [sale1.id, sale3.id]
+    assert movements[0]["running_total"] == 10000 + 5000
+    assert movements[1]["running_total"] == 10000 + 5000 + 5000
+    assert movements[-1]["running_total"] == cash_service.compute_theoretical_amount(db_session, session_)
+
+
+def test_cash_movements_endpoint(client, auth_headers):
+    admin_headers = auth_headers("admin3", Role.ADMIN)
+    manager_headers = auth_headers("manager6", Role.MANAGER)
+    cashier_headers = auth_headers("cashier7", Role.CAISSIER)
+
+    product = client.post(
+        "/api/products",
+        json={"name": "Sprite 33cl", "category": "Sodas", "prix_achat": 3000, "prix_vente": 5000},
+        headers=admin_headers,
+    ).json()
+    movement = client.post(
+        "/api/stock/movements",
+        json={"product_id": product["id"], "type": "entree", "qty": 10, "unit": "unite"},
+        headers=admin_headers,
+    ).json()
+    client.post(f"/api/stock/movements/{movement['id']}/validate", json={"approve": True}, headers=manager_headers)
+
+    session_ = client.post("/api/cash-sessions/open", json={"opening_amount": 1000}, headers=cashier_headers).json()
+    client.post(
+        "/api/sales",
+        json={
+            "cash_session_id": session_["id"], "payment_mode": "especes", "amount_given": 5000,
+            "items": [{"product_id": product["id"], "qty": 1}],
+        },
+        headers=cashier_headers,
+    )
+
+    res = client.get(f"/api/cash-sessions/{session_['id']}/cash-movements", headers=cashier_headers)
+    assert res.status_code == 200
+    movements = res.json()
+    assert len(movements) == 1
+    assert movements[0]["amount"] == 5000
+    assert movements[0]["running_total"] == 6000

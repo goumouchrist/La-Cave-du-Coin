@@ -80,6 +80,40 @@ def compute_summary(db: Session, session_: CashSession) -> dict:
     }
 
 
+def list_cash_movements(db: Session, session_: CashSession) -> list[dict]:
+    """Détail, vente par vente, de tout ce qui compose le montant théorique en
+    espèces de la session (avec un total qui s'accumule au fil des ventes) :
+    permet au caissier de vérifier en cours de journée que le tiroir
+    correspond bien à ce qu'attend le système, plutôt que de découvrir un
+    écart uniquement au moment de la fermeture."""
+    sales = (
+        db.query(Sale)
+        .filter(
+            Sale.cash_session_id == session_.id,
+            Sale.payment_mode == PaymentMode.ESPECES,
+            Sale.status == SaleStatus.VALIDE,
+        )
+        .order_by(Sale.created_at.asc())
+        .all()
+    )
+
+    running_total = session_.opening_amount
+    movements = []
+    for sale in sales:
+        running_total += sale.total_amount
+        movements.append(
+            {
+                "sale_id": sale.id,
+                "transaction_number": sale.transaction_number,
+                "cashier_id": sale.cashier_id,
+                "amount": sale.total_amount,
+                "running_total": running_total,
+                "created_at": sale.created_at,
+            }
+        )
+    return movements
+
+
 def close_session(db: Session, session_: CashSession, user_id: int, closing_physical: int) -> CashSession:
     if session_.status != CashSessionStatus.OPEN:
         raise SessionNotOpenError("Cette session de caisse n'est pas ouverte")

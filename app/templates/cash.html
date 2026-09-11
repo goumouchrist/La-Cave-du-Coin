@@ -23,6 +23,18 @@
           Seul le total <b>Espèces</b> doit se retrouver physiquement dans le tiroir
           (les autres modes ne mettent pas d'argent liquide en caisse).
         </p>
+
+        <h3>Mouvements espèces de la session</h3>
+        <table>
+          <thead><tr><th>Heure</th><th>N° transaction</th><th>Montant</th><th>Total cumulé</th></tr></thead>
+          <tbody id="cash-movements-body"></tbody>
+        </table>
+        <p style="color:var(--text-dim); font-size:0.85rem">
+          Le <b>total cumulé</b> de la dernière ligne (fond de caisse initial +
+          toutes les ventes Espèces) doit correspondre exactement à ce qui est
+          physiquement dans le tiroir à tout moment de la journée — pas
+          seulement à la fermeture.
+        </p>
       </div>
     </div>
 
