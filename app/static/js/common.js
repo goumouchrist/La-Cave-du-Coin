@@ -4,7 +4,17 @@ const AUTH_KEY = "cave_du_coin_auth";
 // N'affecte jamais la session de caisse ni les ventes déjà enregistrées : tout
 // est stocké côté serveur, une reconnexion avec le même compte reprend là où
 // on en était (la caisse reste ouverte).
+//
+// L'horodatage de la dernière activité est persisté dans localStorage (et pas
+// seulement gardé en mémoire via un unique setTimeout) car un onglet inactif
+// en arrière-plan peut être déchargé par le navigateur pour économiser la
+// mémoire : le minuteur en mémoire disparaît alors silencieusement et la
+// déconnexion ne se produit jamais. En vérifiant périodiquement l'horodatage
+// persistant (et dès le chargement de la page), la déconnexion s'applique
+// même dans ce cas.
+const LAST_ACTIVITY_KEY = "cave_du_coin_last_activity";
 const INACTIVITY_TIMEOUT_MINUTES = 15;
+const INACTIVITY_CHECK_INTERVAL_MS = 15000;
 
 function getAuth() {
   const raw = localStorage.getItem(AUTH_KEY);
@@ -13,26 +23,53 @@ function getAuth() {
 
 function setAuth(auth) {
   localStorage.setItem(AUTH_KEY, JSON.stringify(auth));
+  localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
 }
 
 function logout(reason) {
   localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(LAST_ACTIVITY_KEY);
   window.location.href = reason ? `/?reason=${reason}` : "/";
 }
 
-let inactivityTimer = null;
+function isInactiveTooLong() {
+  const last = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || "0", 10);
+  return Date.now() - last > INACTIVITY_TIMEOUT_MINUTES * 60 * 1000;
+}
+
+function checkInactivity() {
+  if (isInactiveTooLong()) {
+    logout("inactivity");
+  }
+}
+
+let lastActivityPersistAt = 0;
+
+function markActivity() {
+  const now = Date.now();
+  if (now - lastActivityPersistAt > 5000) {
+    localStorage.setItem(LAST_ACTIVITY_KEY, now.toString());
+    lastActivityPersistAt = now;
+  }
+}
 
 function setupInactivityLogout() {
-  const resetTimer = () => {
-    if (inactivityTimer) clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(() => logout("inactivity"), INACTIVITY_TIMEOUT_MINUTES * 60 * 1000);
-  };
+  // Vérifie d'abord l'horodatage laissé par une éventuelle session précédente
+  // (ex: onglet déchargé puis rechargé après le délai) avant de le rafraîchir.
+  if (isInactiveTooLong() && localStorage.getItem(LAST_ACTIVITY_KEY)) {
+    logout("inactivity");
+    return;
+  }
+  localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
 
   ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "click"].forEach((evt) =>
-    document.addEventListener(evt, resetTimer, { passive: true })
+    document.addEventListener(evt, markActivity, { passive: true })
   );
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) checkInactivity();
+  });
 
-  resetTimer();
+  setInterval(checkInactivity, INACTIVITY_CHECK_INTERVAL_MS);
 }
 
 function requireAuth(allowedRoles) {
