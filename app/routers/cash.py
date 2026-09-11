@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import client_ip, get_current_user
-from app.models import CashSession, User
-from app.schemas import CashSessionClose, CashSessionOpen, CashSessionOut, CashSessionSummary
+from app.deps import client_ip, get_current_user, require_role
+from app.models import CashSession, Role, User
+from app.schemas import CashSessionClose, CashSessionOpen, CashSessionOut, CashSessionResolve, CashSessionSummary
 from app.services import cash as cash_service
 from app.services import logs as logs_service
 
@@ -67,3 +67,27 @@ def get_session_summary(session_id: int, db: Session = Depends(get_db), _: User 
     if not session_:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session introuvable")
     return cash_service.compute_summary(db, session_)
+
+
+@router.post("/{session_id}/resolve", response_model=CashSessionOut)
+def resolve_session(
+    session_id: int,
+    payload: CashSessionResolve,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(Role.MANAGER, Role.ADMIN)),
+):
+    session_ = db.get(CashSession, session_id)
+    if not session_:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session introuvable")
+
+    try:
+        session_ = cash_service.resolve_blocked_session(db, session_, current_user.id, payload.comment)
+    except cash_service.SessionNotBlockedError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+
+    logs_service.record(
+        db, current_user.id, "cash_session_resolved",
+        {"session_id": session_.id, "gap": session_.gap_amount, "comment": payload.comment}, client_ip(request),
+    )
+    return session_

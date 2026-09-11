@@ -153,3 +153,60 @@ def test_summary_endpoint_reflects_open_session_sales(client, auth_headers):
     assert body["by_payment_mode"] == {"especes": 5000}
     assert body["theoretical_cash"] == 5000
     assert body["sales_count"] == 1
+
+
+def test_resolve_blocked_session_closes_it_with_comment(db_session):
+    cashier = create_user(db_session, "cashier4", "pw", Role.CAISSIER)
+    manager = create_user(db_session, "manager3", "pw", Role.MANAGER)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=50000)
+    blocked = cash_service.close_session(db_session, session_, cashier.id, closing_physical=65000)
+    assert blocked.status == CashSessionStatus.BLOCKED
+
+    resolved = cash_service.resolve_blocked_session(
+        db_session, blocked, manager.id, "Erreur de comptage vérifiée avec le caissier, écart justifié."
+    )
+
+    assert resolved.status == CashSessionStatus.CLOSED
+    assert resolved.resolved_by == manager.id
+    assert resolved.resolution_comment == "Erreur de comptage vérifiée avec le caissier, écart justifié."
+    assert resolved.resolved_at is not None
+
+
+def test_cannot_resolve_a_session_that_is_not_blocked(db_session):
+    cashier = create_user(db_session, "cashier5", "pw", Role.CAISSIER)
+    manager = create_user(db_session, "manager4", "pw", Role.MANAGER)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=50000)
+    closed = cash_service.close_session(db_session, session_, cashier.id, closing_physical=50000)
+
+    with pytest.raises(cash_service.SessionNotBlockedError):
+        cash_service.resolve_blocked_session(db_session, closed, manager.id, "peu importe")
+
+
+def test_resolve_endpoint_requires_manager_role_and_logs_action(db_session, client, auth_headers):
+    cashier_headers = auth_headers("cashier6", Role.CAISSIER)
+    manager_headers = auth_headers("manager5", Role.MANAGER)
+
+    opened = client.post("/api/cash-sessions/open", json={"opening_amount": 50000}, headers=cashier_headers).json()
+    blocked = client.post(
+        f"/api/cash-sessions/{opened['id']}/close", json={"closing_physical": 65000}, headers=cashier_headers
+    ).json()
+    assert blocked["status"] == "blocked"
+
+    forbidden = client.post(
+        f"/api/cash-sessions/{opened['id']}/resolve", json={"comment": "peu importe"}, headers=cashier_headers
+    )
+    assert forbidden.status_code == 403
+
+    res = client.post(
+        f"/api/cash-sessions/{opened['id']}/resolve",
+        json={"comment": "Vérifié avec le caissier, écart accepté."},
+        headers=manager_headers,
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["status"] == "closed"
+    assert body["resolution_comment"] == "Vérifié avec le caissier, écart accepté."
+
+    from app.models import Log
+    log = db_session.query(Log).filter(Log.action == "cash_session_resolved").first()
+    assert log is not None

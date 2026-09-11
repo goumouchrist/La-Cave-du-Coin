@@ -171,9 +171,16 @@ class CashSessionOut(BaseModel):
     status: CashSessionStatus
     opened_at: datetime
     closed_at: datetime | None
+    resolved_by: int | None
+    resolved_at: datetime | None
+    resolution_comment: str | None
 
     class Config:
         from_attributes = True
+
+
+class CashSessionResolve(BaseModel):
+    comment: str = Field(min_length=3)
 
 
 class CashSessionSummary(BaseModel):

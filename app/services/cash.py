@@ -15,6 +15,10 @@ class SessionNotOpenError(Exception):
     pass
 
 
+class SessionNotBlockedError(Exception):
+    pass
+
+
 def open_session(db: Session, user_id: int, opening_amount: int) -> CashSession:
     existing = db.query(CashSession).filter(CashSession.status == CashSessionStatus.OPEN).first()
     if existing:
@@ -34,6 +38,23 @@ def compute_theoretical_amount(db: Session, session_: CashSession) -> int:
         Sale.status == SaleStatus.VALIDE,
     ).scalar()
     return session_.opening_amount + int(cash_sales)
+
+
+def resolve_blocked_session(db: Session, session_: CashSession, resolver_id: int, comment: str) -> CashSession:
+    """Un Manager/Admin examine une session bloquée (écart trop important) et
+    la clôture réellement une fois l'écart expliqué/vérifié, en laissant une
+    trace (qui, quand, pourquoi) plutôt que de la laisser indéfiniment
+    "blocked" sans suite possible."""
+    if session_.status != CashSessionStatus.BLOCKED:
+        raise SessionNotBlockedError("Cette session n'est pas bloquée")
+
+    session_.status = CashSessionStatus.CLOSED
+    session_.resolved_by = resolver_id
+    session_.resolved_at = datetime.now(timezone.utc)
+    session_.resolution_comment = comment
+    db.commit()
+    db.refresh(session_)
+    return session_
 
 
 def compute_summary(db: Session, session_: CashSession) -> dict:

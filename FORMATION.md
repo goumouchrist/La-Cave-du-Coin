@@ -184,10 +184,14 @@ Un tableau **"Historique des sessions"** en bas de la page liste toutes les
 sessions passées (fond initial, théorique, physique, écart, statut) pour
 pouvoir suivre les écarts dans le temps.
 
-> ⚠️ **Note** : une fois une session marquée "blocked", il n'y a pas encore de
-> bouton pour la débloquer/valider formellement depuis l'interface — seul le
-> statut reste visible dans l'historique. Si besoin au quotidien, signalez-le
-> pour qu'on ajoute ce workflow de validation.
+**Résolution d'une session bloquée** *(Manager/Admin/Super Admin uniquement)* :
+sur la ligne d'une session au statut "blocked", un bouton **"Résoudre"**
+apparaît dans la colonne "Résolution". Cliquer dessus demande un
+**commentaire obligatoire** expliquant l'écart (ex: "erreur de comptage
+vérifiée avec le caissier"), puis clôture réellement la session (statut
+"closed"). Le commentaire, l'auteur et la date restent visibles dans
+l'historique — rien n'est perdu, et l'écart initial reste consultable même
+après résolution.
 
 ---
 
@@ -359,7 +363,10 @@ créances existantes dans "Créances clients" avant de lui refaire crédit.
 
 **"La fermeture de caisse affiche 'blocked' / statut bloqué."**
 L'écart entre le montant théorique et le montant physique compté dépasse
-10 000 GNF. Un Manager doit intervenir pour vérifier et débloquer.
+10 000 GNF. Un Manager (ou Admin) doit vérifier l'écart avec le caissier puis
+cliquer **"Résoudre"** sur la ligne correspondante dans l'historique des
+sessions (menu "Sessions caisse"), en indiquant un commentaire expliquant
+l'écart.
 
 **"Je veux supprimer un produit ou un fournisseur par erreur créé."**
 La "suppression" désactive l'élément sans effacer son historique (ventes,

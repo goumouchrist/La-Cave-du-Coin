@@ -43,7 +43,11 @@ async function refreshStatus() {
   summaryBox.style.display = "block";
 }
 
+const CAN_RESOLVE_ROLES = ["manager", "admin", "super_admin"];
+
 async function loadHistory() {
+  const auth = getAuth();
+  const canResolve = auth && CAN_RESOLVE_ROLES.includes(auth.role);
   const sessions = await apiFetch("/api/cash-sessions");
   document.getElementById("history-body").innerHTML = sessions
     .map(
@@ -56,9 +60,38 @@ async function loadHistory() {
         <td>${s.gap_amount !== null ? formatGNF(s.gap_amount) : "-"}</td>
         <td>${s.status}</td>
         <td>${s.closed_at ? new Date(s.closed_at).toLocaleString("fr-FR") : "-"}</td>
+        <td>${resolutionCell(s, canResolve)}</td>
       </tr>`
     )
     .join("");
+}
+
+function resolutionCell(session, canResolve) {
+  if (session.status === "blocked") {
+    return canResolve
+      ? `<button class="secondary" onclick="resolveSession(${session.id})">Résoudre</button>`
+      : "En attente de validation Manager";
+  }
+  if (session.resolution_comment) {
+    return `Résolu le ${new Date(session.resolved_at).toLocaleString("fr-FR")} : "${session.resolution_comment}"`;
+  }
+  return "-";
+}
+
+async function resolveSession(sessionId) {
+  const comment = prompt(
+    "Expliquez l'écart constaté (motif obligatoire, 3 caractères minimum) avant de clôturer cette session :"
+  );
+  if (!comment) return;
+  try {
+    await apiFetch(`/api/cash-sessions/${sessionId}/resolve`, {
+      method: "POST",
+      body: JSON.stringify({ comment }),
+    });
+    await loadHistory();
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function openSession() {

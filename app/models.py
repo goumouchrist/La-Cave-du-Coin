@@ -142,6 +142,9 @@ class CashSession(Base):
     status: Mapped[CashSessionStatus] = mapped_column(Enum(CashSessionStatus), default=CashSessionStatus.OPEN)
     opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolution_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     sales: Mapped[list["Sale"]] = relationship(back_populates="cash_session")
 
