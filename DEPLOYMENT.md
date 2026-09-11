@@ -153,6 +153,15 @@ de la production. Sert à faire des requêtes/tests sans aucun risque pour la
 prod. Remis à jour automatiquement **une fois par mois** avec une copie
 fraîche des données de production (et du code le plus récent).
 
+**Cas particulier** : si la prod ne contient encore aucun produit ni vente
+réelle (juste après un `reset_prod_database.sh`, par exemple), le
+rafraîchissement copie automatiquement la dernière sauvegarde de démo
+disponible (`backup_before_reset_*.dump`) au lieu d'une prod vide — pratique
+pour continuer à s'entraîner sur des données réalistes en attendant la vraie
+activité. Dès que la prod contient au moins un produit ou une vente réelle,
+le script bascule automatiquement sur la copie normale (la vraie prod) —
+aucune action requise de votre part pour ce basculement.
+
 ### Vue d'ensemble
 
 ```
