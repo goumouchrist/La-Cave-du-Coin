@@ -20,6 +20,9 @@ log "sauvegarde de securite avant nettoyage : $BACKUP_FILE"
 docker compose exec -T db pg_dump -U cave_du_coin -Fc cave_du_coin > "$BACKUP_FILE"
 log "sauvegarde ecrite : $PROJECT_DIR/$BACKUP_FILE"
 
+log "reconstruction de l'image app (pour etre sur d'utiliser le code juste recupere par git pull)"
+docker compose up -d --build
+
 log "vidage des tables (schema conserve, comptes/produits/ventes/stock/clients effaces)"
 docker compose exec -T db psql -U cave_du_coin -d cave_du_coin -c \
   "TRUNCATE TABLE users, suppliers, products, stock_movements, cash_sessions, sales, sale_items, logs, scan_logs, customers, customer_repayments, returns, return_items RESTART IDENTITY CASCADE;"
