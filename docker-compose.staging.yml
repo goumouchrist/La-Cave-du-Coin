@@ -26,12 +26,12 @@ services:
       - pgadmin_data:/var/lib/pgadmin
     networks:
       - default
-      - caddy_net
+      - caddy-net
 
 volumes:
   pgadmin_data:
 
 networks:
-  caddy_net:
-    name: caddy_net
+  caddy-net:
+    name: caddy-net
     external: true

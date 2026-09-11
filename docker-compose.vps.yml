@@ -22,13 +22,13 @@ services:
       - default
       # Réseau partagé avec le stack "staging" (cf. docker-compose.staging.yml)
       # pour pouvoir router staging/pgAdmin sans exposer leurs ports au public.
-      - caddy_net
+      - caddy-net
 
 volumes:
   caddy_data:
   caddy_config:
 
 networks:
-  caddy_net:
-    name: caddy_net
+  caddy-net:
+    name: caddy-net
     external: true

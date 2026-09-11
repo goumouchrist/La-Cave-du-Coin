@@ -236,7 +236,7 @@ par exemple `pgadmin.lacaveducoin.com`.
 **Une seule fois, sur le VPS** — créer le réseau Docker partagé entre les
 deux stacks (prod et staging) qui permettra à Caddy de router vers pgAdmin :
 ```bash
-docker network create caddy_net
+docker network create caddy-net
 ```
 
 Dans `.env.staging`, ajouter/vérifier les deux lignes (déjà présentes dans
