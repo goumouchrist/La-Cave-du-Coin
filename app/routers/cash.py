@@ -4,11 +4,16 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import client_ip, get_current_user
 from app.models import CashSession, User
-from app.schemas import CashSessionClose, CashSessionOpen, CashSessionOut
+from app.schemas import CashSessionClose, CashSessionOpen, CashSessionOut, CashSessionSummary
 from app.services import cash as cash_service
 from app.services import logs as logs_service
 
 router = APIRouter(prefix="/api/cash-sessions", tags=["cash"])
+
+
+@router.get("", response_model=list[CashSessionOut])
+def list_sessions(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    return db.query(CashSession).order_by(CashSession.opened_at.desc()).all()
 
 
 @router.post("/open", response_model=CashSessionOut, status_code=status.HTTP_201_CREATED)
@@ -54,3 +59,11 @@ def get_current_session(db: Session = Depends(get_db), _: User = Depends(get_cur
     from app.models import CashSessionStatus
 
     return db.query(CashSession).filter(CashSession.status == CashSessionStatus.OPEN).first()
+
+
+@router.get("/{session_id}/summary", response_model=CashSessionSummary)
+def get_session_summary(session_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    session_ = db.get(CashSession, session_id)
+    if not session_:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session introuvable")
+    return cash_service.compute_summary(db, session_)

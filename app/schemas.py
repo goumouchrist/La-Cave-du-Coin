@@ -176,6 +176,14 @@ class CashSessionOut(BaseModel):
         from_attributes = True
 
 
+class CashSessionSummary(BaseModel):
+    session_id: int
+    opening_amount: int
+    theoretical_cash: int
+    by_payment_mode: dict[str, int]
+    sales_count: int
+
+
 # ---------- Sales ----------
 
 class SaleItemIn(BaseModel):

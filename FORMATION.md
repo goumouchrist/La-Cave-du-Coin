@@ -163,15 +163,31 @@ tracé (qui l'a encaissé, quand, combien) — rien n'est perdu.
 
 ### 2.6 Fermer sa session de caisse
 
-Menu **"Sessions caisse"** :
+Tant qu'une session est ouverte, le menu **"Sessions caisse"** affiche une
+**répartition des ventes par mode de paiement** (Espèces, Mobile Money,
+Paycard, etc.) — utile pour vérifier ce qui a été vendu avant de compter le
+tiroir. **Seul le total Espèces doit se retrouver physiquement dans le
+tiroir** : les autres modes (Mobile Money, Paycard, Crédit...) ne mettent pas
+d'argent liquide en caisse.
+
+Pour fermer :
 1. Compter physiquement l'argent présent dans la caisse.
 2. Saisir ce **montant physique compté** dans le champ dédié.
 3. Cliquer **"Fermer"**.
 
 Le système compare ce montant au montant théorique (fond de caisse initial +
-ventes espèces enregistrées) et affiche l'écart. **Si l'écart dépasse 10 000
-GNF, la session est automatiquement bloquée** et nécessite une validation par
-un Manager — c'est normal, ce n'est pas une erreur du logiciel.
+total des ventes Espèces de la session) et affiche l'écart. **Si l'écart
+dépasse 10 000 GNF, la session est automatiquement bloquée** et nécessite une
+validation par un Manager — c'est normal, ce n'est pas une erreur du logiciel.
+
+Un tableau **"Historique des sessions"** en bas de la page liste toutes les
+sessions passées (fond initial, théorique, physique, écart, statut) pour
+pouvoir suivre les écarts dans le temps.
+
+> ⚠️ **Note** : une fois une session marquée "blocked", il n'y a pas encore de
+> bouton pour la débloquer/valider formellement depuis l'interface — seul le
+> statut reste visible dans l'historique. Si besoin au quotidien, signalez-le
+> pour qu'on ajoute ce workflow de validation.
 
 ---
 

@@ -36,6 +36,29 @@ def compute_theoretical_amount(db: Session, session_: CashSession) -> int:
     return session_.opening_amount + int(cash_sales)
 
 
+def compute_summary(db: Session, session_: CashSession) -> dict:
+    """Répartition des ventes de la session par mode de paiement, pour aider
+    au comptage avant la fermeture : seul le montant en Espèces (théorique)
+    doit se retrouver physiquement dans le tiroir, les autres modes
+    (Mobile Money, Paycard, Crédit...) ne mettent pas d'argent liquide en
+    caisse mais sont utiles à afficher pour vérifier le total des ventes."""
+    rows = (
+        db.query(Sale.payment_mode, func.sum(Sale.total_amount), func.count(Sale.id))
+        .filter(Sale.cash_session_id == session_.id, Sale.status == SaleStatus.VALIDE)
+        .group_by(Sale.payment_mode)
+        .all()
+    )
+    by_payment_mode = {mode.value: int(total) for mode, total, _ in rows}
+    sales_count = sum(count for _, _, count in rows)
+    return {
+        "session_id": session_.id,
+        "opening_amount": session_.opening_amount,
+        "theoretical_cash": compute_theoretical_amount(db, session_),
+        "by_payment_mode": by_payment_mode,
+        "sales_count": sales_count,
+    }
+
+
 def close_session(db: Session, session_: CashSession, user_id: int, closing_physical: int) -> CashSession:
     if session_.status != CashSessionStatus.OPEN:
         raise SessionNotOpenError("Cette session de caisse n'est pas ouverte")
