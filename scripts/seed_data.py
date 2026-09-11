@@ -26,7 +26,7 @@ DEMO_PRODUCTS = [
 ]
 
 
-def seed():
+def seed(users_only: bool = False):
     db = SessionLocal()
     try:
         default_users = [
@@ -42,6 +42,10 @@ def seed():
             except DuplicateUsernameError:
                 print(f"Utilisateur déjà existant: {username}")
 
+        if users_only:
+            db.commit()
+            return
+
         for data in DEMO_PRODUCTS:
             existing = db.query(Product).filter(Product.barcode == data["barcode"]).first()
             if existing:
@@ -55,4 +59,4 @@ def seed():
 
 
 if __name__ == "__main__":
-    seed()
+    seed(users_only="--users-only" in sys.argv)
