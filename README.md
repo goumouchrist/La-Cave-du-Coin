@@ -6,6 +6,9 @@ Monnaie : **Franc Guinéen (GNF)**.
 
 ![La Cave du Coin](logo.png)
 
+> 👉 Pour former le personnel (caissiers, managers, admins) à l'utilisation de
+> l'application au quotidien, voir [FORMATION.md](FORMATION.md).
+
 ## Sommaire
 
 - [Périmètre couvert dans cette version](#périmètre-couvert-dans-cette-version)
