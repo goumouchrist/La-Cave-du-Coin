@@ -279,6 +279,41 @@ supprimé : il garde une trace ("annulé", avec le motif et l'auteur).
 > bouton dédié sur la page Caisse. Si vous avez besoin d'annuler un ticket au
 > quotidien, signalez-le pour qu'on ajoute le bouton correspondant.
 
+### 3.8 Comptages physiques réguliers (protection contre la substitution de produits)
+
+**Le logiciel ne peut pas détecter une vente qui n'a jamais été saisie.** Si un
+caissier malhonnête vend ses propres produits à la place de ceux de la
+boutique (et empoche l'argent sans jamais toucher au stock ni à la caisse
+officiels), aucune trace n'apparaît dans l'application — ni dans les ventes,
+ni dans les mouvements de stock, ni dans l'écart de caisse à la fermeture. La
+seule protection efficace contre ce type de fraude est un contrôle physique
+régulier, en dehors du logiciel :
+
+1. **Interdire tout stock ou objet personnel du caissier à proximité du poste
+   de caisse et des rayons.** Une règle simple, affichée, sans exception.
+2. **Compter physiquement le stock réel** d'une sélection de produits (ou de
+   tout le stock, selon le temps disponible), à une fréquence régulière —
+   par exemple chaque semaine, plus des comptages surprises non annoncés de
+   temps en temps.
+3. **Comparer ce comptage au stock théorique affiché** dans "Stock" →
+   tableau "Produits & stock courant" (colonne stock courant, calculée à
+   partir des mouvements validés).
+4. **Si un écart est constaté**, l'enregistrer comme un mouvement de stock de
+   type **"Ajustement"** (voir [3.1](#31-gérer-le-stock)) avec un motif
+   précis (ex : "comptage du 15/09 : -12 unités constatées vs stock système,
+   à investiguer"). Ce mouvement nécessite une validation **Admin**, ce qui
+   garantit qu'un écart n'est jamais discrètement corrigé sans qu'un
+   responsable en soit informé.
+5. **Un écart récurrent, toujours dans le même sens, sur les mêmes produits,
+   ou concentré sur les sessions d'un même caissier** est le signal à
+   surveiller — un comptage isolé prouve peu de choses, une tendance dans le
+   temps est plus parlante.
+
+Cette procédure ne remplace pas les règles automatiques de la
+[section 6](#6-règles-anti-fraude-à-connaître), elle les complète : celles-ci
+protègent contre la fraude *sur des ventes enregistrées*, celle-ci protège
+contre les ventes *jamais enregistrées*.
+
 ---
 
 ## 4. Guide de l'Admin (en plus du Manager)
