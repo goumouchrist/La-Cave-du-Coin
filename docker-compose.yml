@@ -15,6 +15,15 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      default:
+      # Rejoint aussi le réseau partagé avec le stack staging pour être
+      # visible depuis pgAdmin (cf. docker-compose.staging.yml), sous un
+      # alias distinct du "db" de staging pour éviter toute collision de nom
+      # sur ce réseau partagé.
+      caddy-net:
+        aliases:
+          - proddb
 
   app:
     build: .
@@ -34,3 +43,9 @@ services:
 
 volumes:
   db_data:
+
+networks:
+  default:
+  caddy-net:
+    name: caddy-net
+    external: true
