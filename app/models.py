@@ -168,6 +168,8 @@ class Sale(Base):
     cancel_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     print_count: Mapped[int] = mapped_column(Integer, default=0)
+    customer_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    receipt_email_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     cash_session: Mapped["CashSession"] = relationship(back_populates="sales")

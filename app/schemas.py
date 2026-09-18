@@ -217,6 +217,7 @@ class SaleCreate(BaseModel):
     customer_name: str | None = Field(default=None, description="Nouveau client crédit (si customer_id non fourni)")
     customer_phone: str | None = None
     customer_address: str | None = None
+    customer_email: str | None = Field(default=None, description="Pour l'envoi du reçu par email (facultatif, toute vente)")
     due_date: date | None = Field(default=None, description="Date de remboursement prévue (mode crédit)")
 
 
@@ -245,11 +246,17 @@ class SaleOut(BaseModel):
     due_date: date | None
     status: SaleStatus
     print_count: int
+    customer_email: str | None
+    receipt_email_sent_at: datetime | None
     created_at: datetime
     items: list[SaleItemOut]
 
     class Config:
         from_attributes = True
+
+
+class SaleEmailRequest(BaseModel):
+    email: str | None = Field(default=None, description="Remplace l'email enregistré sur la vente, si fourni")
 
 
 class SaleCancel(BaseModel):

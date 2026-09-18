@@ -241,6 +241,7 @@ async function validateSale() {
     customer_name: paymentMode === "credit" && !creditCustomer ? creditName || null : null,
     customer_phone: paymentMode === "credit" && !creditCustomer ? document.getElementById("credit-phone").value.trim() || null : null,
     customer_address: paymentMode === "credit" && !creditCustomer ? document.getElementById("credit-address").value.trim() || null : null,
+    customer_email: document.getElementById("customer-email").value.trim() || null,
     due_date: paymentMode === "credit" ? document.getElementById("credit-due-date").value || null : null,
   };
 
@@ -249,14 +250,20 @@ async function validateSale() {
     const dueNotice = sale.remaining_due_gnf > 0
       ? ` Reste dû par le client : ${formatGNF(sale.remaining_due_gnf)}${sale.due_date ? ` (échéance : ${sale.due_date})` : ""}. Voir "Créances clients" pour la relance.`
       : "";
+    const emailButton = sale.customer_email
+      ? `<button class="secondary" onclick="emailReceipt(${sale.id}, 'email-status-${sale.id}')">Envoyer le reçu par email</button> <span id="email-status-${sale.id}"></span>`
+      : "";
     resultBox.innerHTML = `
       <div class="alert alert-success">
         Vente #${sale.transaction_number} enregistrée. Monnaie à rendre : ${formatGNF(sale.change_amount)}.${dueNotice}
+        <br /><br />
         <button class="secondary" onclick="openAuthenticatedPdf('/api/sales/${sale.id}/receipt.pdf')">Imprimer le reçu</button>
+        ${emailButton}
       </div>
     `;
     cart = [];
     document.getElementById("amount-given").value = 0;
+    document.getElementById("customer-email").value = "";
     document.getElementById("credit-name").value = "";
     document.getElementById("credit-phone").value = "";
     document.getElementById("credit-address").value = "";
@@ -266,6 +273,17 @@ async function validateSale() {
     renderCart();
   } catch (err) {
     resultBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+async function emailReceipt(saleId, statusElId) {
+  const statusEl = document.getElementById(statusElId);
+  statusEl.textContent = "Envoi en cours...";
+  try {
+    await apiFetch(`/api/sales/${saleId}/receipt/email`, { method: "POST", body: JSON.stringify({}) });
+    statusEl.textContent = "Reçu envoyé par email ✓";
+  } catch (err) {
+    statusEl.textContent = "Erreur : " + err.message;
   }
 }
 

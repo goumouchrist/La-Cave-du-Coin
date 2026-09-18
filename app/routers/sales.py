@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import client_ip, get_current_user
 from app.models import Product, Sale, User
-from app.schemas import ReturnCreate, ReturnOut, SaleCancel, SaleCreate, SaleOut, ScanRequest
+from app.schemas import ReturnCreate, ReturnOut, SaleCancel, SaleCreate, SaleEmailRequest, SaleOut, ScanRequest
 from app.services import customers as customers_service
 from app.services import logs as logs_service
+from app.services import mail as mail_service
 from app.services import products as products_service
 from app.services import receipts as receipts_service
 from app.services import returns as returns_service
@@ -45,6 +46,7 @@ def create_sale(payload: SaleCreate, request: Request, db: Session = Depends(get
             customer_name=payload.customer_name,
             customer_phone=payload.customer_phone,
             customer_address=payload.customer_address,
+            customer_email=payload.customer_email,
             due_date=payload.due_date,
         )
     except sales_service.CreditLimitExceededError as exc:
@@ -112,6 +114,38 @@ def get_receipt(sale_id: int, request: Request, db: Session = Depends(get_db), c
         {"sale_id": sale.id, "print_count": sale.print_count, "duplicata": is_duplicata}, client_ip(request),
     )
     return Response(content=pdf_bytes, media_type="application/pdf")
+
+
+@router.post("/{sale_id}/receipt/email", response_model=SaleOut)
+def email_receipt(sale_id: int, payload: SaleEmailRequest, request: Request, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    sale = db.get(Sale, sale_id)
+    if not sale:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Vente introuvable")
+
+    recipient = payload.email or sale.customer_email
+    if not recipient:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Aucune adresse email renseignée pour cette vente")
+
+    products_by_id = {item.product_id: db.get(Product, item.product_id) for item in sale.items}
+    cashier = db.get(User, sale.cashier_id)
+    cashier_name = (cashier.full_name or cashier.username) if cashier else ""
+    pdf_bytes = receipts_service.build_receipt_pdf(sale, products_by_id, cashier_name, is_duplicata=False)
+
+    try:
+        mail_service.send_email(
+            recipient,
+            f"Reçu {sale.transaction_number} - La Cave du Coin",
+            "Merci pour votre achat. Vous trouverez votre reçu en pièce jointe.",
+            attachment=(f"recu_{sale.transaction_number}.pdf", pdf_bytes, "pdf"),
+        )
+    except mail_service.MailNotConfiguredError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+    except mail_service.MailSendError as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
+
+    sales_service.register_email_sent(db, sale)
+    logs_service.record(db, current_user.id, "receipt_emailed", {"sale_id": sale.id, "email": recipient}, client_ip(request))
+    return sale
 
 
 @router.post("/{sale_id}/return", response_model=ReturnOut, status_code=status.HTTP_201_CREATED)

@@ -53,6 +53,7 @@ def create_sale(
     customer_name: str | None = None,
     customer_phone: str | None = None,
     customer_address: str | None = None,
+    customer_email: str | None = None,
     due_date: date | None = None,
 ) -> Sale:
     session_ = db.get(CashSession, cash_session_id)
@@ -142,6 +143,7 @@ def create_sale(
         remaining_due_gnf=remaining_due,
         due_date=due_date if remaining_due > 0 else None,
         status=SaleStatus.VALIDE,
+        customer_email=customer_email,
     )
     sale.items = sale_items
     db.add(sale)
@@ -190,3 +192,9 @@ def register_print(db: Session, sale: Sale) -> bool:
     sale.print_count += 1
     db.commit()
     return sale.print_count > 1
+
+
+def register_email_sent(db: Session, sale: Sale) -> None:
+    """Marque le reçu comme envoyé par email (horodatage), pour tracer qu'il n'a pas eu besoin d'être imprimé."""
+    sale.receipt_email_sent_at = datetime.now(timezone.utc)
+    db.commit()

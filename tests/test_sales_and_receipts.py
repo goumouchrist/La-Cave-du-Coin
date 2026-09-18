@@ -176,6 +176,39 @@ def test_receipt_pdf_is_generated(db_session):
     assert pdf_bytes[:4] == b"%PDF"
 
 
+def test_customer_email_is_stored_on_sale(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+
+    sale = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.ESPECES, amount_given=5000,
+        items=[{"product_id": product.id, "qty": 1}],
+        customer_email="client@example.com",
+    )
+
+    assert sale.customer_email == "client@example.com"
+    assert sale.receipt_email_sent_at is None
+
+
+def test_register_email_sent_marks_timestamp(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+    sale = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.ESPECES, amount_given=5000,
+        items=[{"product_id": product.id, "qty": 1}],
+    )
+
+    assert sale.receipt_email_sent_at is None
+    sales_service.register_email_sent(db_session, sale)
+    assert sale.receipt_email_sent_at is not None
+
+
 def test_receipt_pdf_with_tva_is_generated(db_session):
     admin = create_user(db_session, "admin", "pw", Role.ADMIN)
     manager = create_user(db_session, "manager", "pw", Role.MANAGER)

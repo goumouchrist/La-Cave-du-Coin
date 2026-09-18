@@ -26,5 +26,12 @@ class Settings(BaseSettings):
     BACKUP_RETENTION_DAYS: int = 14
     OFFSITE_BACKUP_DIR: str = ""
 
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USE_TLS: bool = True
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = ""
+
 
 settings = Settings()
