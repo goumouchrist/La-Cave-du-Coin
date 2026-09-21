@@ -121,7 +121,7 @@ def build_repayment_receipt_pdf(repayment: CustomerRepayment, processor_name: st
     customer = repayment.customer
     remaining_owed = max(-customer.credit_balance_gnf, 0)
 
-    height = 78 * mm_unit
+    height = 82 * mm_unit
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=(RECEIPT_WIDTH, height))
 
@@ -156,6 +156,9 @@ def build_repayment_receipt_pdf(repayment: CustomerRepayment, processor_name: st
     y -= 6 * mm_unit
 
     c.setFont("Helvetica", 7)
+    if repayment.payment_mode:
+        c.drawString(4 * mm_unit, y, f"Mode de paiement: {repayment.payment_mode.value}")
+        y -= 4 * mm_unit
     c.drawString(4 * mm_unit, y, f"Solde restant dû: {remaining_owed:,} GNF")
     y -= 8 * mm_unit
 

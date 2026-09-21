@@ -33,11 +33,12 @@ def repay_debt(customer_id: int, payload: DebtRepayment, request: Request, db: S
     if not customer:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client introuvable")
 
-    repayment = customers_service.record_repayment(db, customer, payload.amount, current_user.id)
+    repayment = customers_service.record_repayment(db, customer, payload.amount, current_user.id, payload.payment_mode)
 
     logs_service.record(
         db, current_user.id, "debt_repaid",
-        {"customer_id": customer.id, "amount": payload.amount, "repayment_id": repayment.id}, client_ip(request),
+        {"customer_id": customer.id, "amount": payload.amount, "payment_mode": payload.payment_mode.value, "repayment_id": repayment.id},
+        client_ip(request),
     )
     return repayment
 

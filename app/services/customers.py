@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.models import Customer, CustomerRepayment, Sale
+from app.models import Customer, CustomerRepayment, PaymentMode, Sale
 
 
 class InsufficientCreditError(Exception):
@@ -52,14 +52,18 @@ def record_debt(db: Session, customer: Customer, amount: int) -> Customer:
     return customer
 
 
-def record_repayment(db: Session, customer: Customer, amount: int, processed_by: int) -> CustomerRepayment:
+def record_repayment(
+    db: Session, customer: Customer, amount: int, processed_by: int, payment_mode: PaymentMode | None = None
+) -> CustomerRepayment:
     """Règlement (partiel ou total) d'une créance : crédite le solde, répartit
     le montant sur les ventes à crédit encore dues (de la plus ancienne
     échéance à la plus récente) et garde une trace persistante (qui, quand,
-    combien) pour l'audit et le reçu."""
+    combien, par quel moyen) pour l'audit et le reçu."""
     credit_account(db, customer, amount)
     _allocate_repayment_to_sales(db, customer, amount)
-    repayment = CustomerRepayment(customer_id=customer.id, amount_gnf=amount, processed_by=processed_by)
+    repayment = CustomerRepayment(
+        customer_id=customer.id, amount_gnf=amount, processed_by=processed_by, payment_mode=payment_mode
+    )
     db.add(repayment)
     db.commit()
     db.refresh(repayment)

@@ -231,6 +231,7 @@ class CustomerRepayment(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"))
     amount_gnf: Mapped[int] = mapped_column(Integer)
+    payment_mode: Mapped[PaymentMode | None] = mapped_column(Enum(PaymentMode), nullable=True)
     processed_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 

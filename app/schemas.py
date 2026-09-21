@@ -285,12 +285,14 @@ class DebtOut(BaseModel):
 
 class DebtRepayment(BaseModel):
     amount: int = Field(gt=0)
+    payment_mode: PaymentMode = Field(description="Moyen d'encaissement utilisé par le client pour ce règlement")
 
 
 class RepaymentOut(BaseModel):
     id: int
     customer_id: int
     amount_gnf: int
+    payment_mode: PaymentMode | None
     processed_by: int
     created_at: datetime
     customer: CustomerOut

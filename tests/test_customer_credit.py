@@ -142,10 +142,13 @@ def test_record_repayment_persists_a_repayment_record(db_session):
     customer = db_session.get(Customer, sale.customer_id)
     owed = sale.total_amount - 1000
 
-    repayment = customers_service.record_repayment(db_session, customer, owed, processed_by=manager.id)
+    repayment = customers_service.record_repayment(
+        db_session, customer, owed, processed_by=manager.id, payment_mode=PaymentMode.MOBILE_MONEY
+    )
 
     assert repayment.id is not None
     assert repayment.amount_gnf == owed
+    assert repayment.payment_mode == PaymentMode.MOBILE_MONEY
     assert repayment.processed_by == manager.id
     assert repayment.customer.id == customer.id
 
@@ -164,10 +167,15 @@ def test_repay_debt_endpoint_logs_action_and_returns_receipt(db_session, client,
     )
     owed = sale.total_amount - 1000
 
-    res = client.post(f"/api/customers/{sale.customer_id}/repay-debt", json={"amount": owed}, headers=headers)
+    res = client.post(
+        f"/api/customers/{sale.customer_id}/repay-debt",
+        json={"amount": owed, "payment_mode": "especes"},
+        headers=headers,
+    )
     assert res.status_code == 201, res.text
     repayment = res.json()
     assert repayment["amount_gnf"] == owed
+    assert repayment["payment_mode"] == "especes"
     assert repayment["customer"]["credit_balance_gnf"] == 0
 
     from app.models import Log
