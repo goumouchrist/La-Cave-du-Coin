@@ -31,6 +31,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql+psycopg2://cave_du_coin:${POSTGRES_PASSWORD:-change-me}@db:5432/cave_du_coin
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
