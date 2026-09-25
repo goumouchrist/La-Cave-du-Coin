@@ -337,9 +337,47 @@ Toujours dans "Stock" :
   fichier CSV (télécharger le modèle avec le bouton dédié pour avoir le bon
   format de colonnes).
 - **Import de mouvements de stock** : idem pour des mouvements (chaque ligne
-  importée reste en attente de validation, comme une saisie manuelle). Le
-  modèle inclut une colonne `expiry_date` (format `AAAA-MM-JJ`, facultative)
-  pour renseigner la date de péremption d'un lot dès l'import.
+  importée reste en attente de validation, comme une saisie manuelle).
+
+En cas d'erreur sur une ligne (colonne obligatoire manquante, valeur non
+numérique, code-barres inconnu...), **seule cette ligne est rejetée** — les
+autres lignes valides du fichier sont importées normalement, et le détail de
+chaque erreur (numéro de ligne + message) est affiché après l'import.
+
+#### Champs du modèle "Import du catalogue"
+
+| Colonne | Obligatoire | Explication |
+|---|---|---|
+| `barcode` | Non | Code-barres du produit (celui du fabricant). Laissé vide, le produit n'a pas de code-barres — un code interne (QR) pourra être généré plus tard depuis "Stock". |
+| `name` | **Oui** | Nom du produit, affiché partout (caisse, reçus, stock). |
+| `category` | **Oui** | Catégorie libre (texte), utilisée pour la ventilation des ventes par catégorie dans les statistiques. |
+| `unit_carton_qty` | Non (défaut 24) | Nombre d'unités dans un carton — sert à la conversion automatique lors d'un mouvement de stock saisi en cartons. |
+| `unit_pack_qty` | Non (défaut 6) | Nombre d'unités dans un pack — même rôle que ci-dessus pour les packs. |
+| `prix_achat` | **Oui** | Prix d'achat unitaire (GNF). Sert au calcul de la marge minimale autorisée. |
+| `prix_vente` | **Oui** | Prix de vente unitaire (GNF). **Anti-fraude** : ne peut pas être inférieur à `prix_achat − 5 %` (la règle s'applique aussi à l'import, une ligne qui viole ça est rejetée). |
+| `stock_min_cartons` | Non (défaut 5) | Seuil d'alerte de rupture, en cartons. |
+| `supplier` | Non | Nom du fournisseur habituel (texte) — créé automatiquement s'il n'existe pas encore, sinon simplement rattaché. |
+
+Trois colonnes du produit ne figurent **pas** dans ce CSV : `is_active`
+(toujours actif à la création), `tva_rate` (à renseigner après coup si
+besoin, depuis "Stock") et l'identifiant (généré automatiquement).
+
+#### Champs du modèle "Import de mouvements de stock"
+
+| Colonne | Obligatoire | Explication |
+|---|---|---|
+| `barcode` | **Oui** | Code-barres du produit concerné — doit déjà exister en base (créez le produit d'abord si besoin). |
+| `type` | **Oui** | `entree`, `casse`, `don`, ou `ajustement`. (Pas `sortie_vente` : réservée aux ventes, jamais saisie manuellement.) |
+| `qty` | **Oui** | Quantité, positive sauf pour `ajustement` où une valeur négative signale un manque constaté (voir [3.1](#31-gérer-le-stock)). |
+| `unit` | Non (défaut `unite`) | `unite`, `carton`, ou `pack` — conversion automatique. |
+| `invoice_number` | Non | Numéro de facture fournisseur (pertinent pour une entrée). |
+| `expiry_date` | Non | Date de péremption du lot, format `AAAA-MM-JJ` (pertinent pour une entrée — voir [3.1](#31-gérer-le-stock)). |
+| `reason` | Non | Motif du mouvement — pas techniquement obligatoire dans le fichier, mais fortement recommandé pour une casse/don/ajustement (utile lors de la validation par la 2ᵉ personne). |
+| `supplier` | Non | Nom du fournisseur (texte) — même comportement que pour l'import produits. |
+
+Comme pour une saisie manuelle, chaque ligne importée reste **en attente de
+validation** par une personne différente de celle qui a fait l'import (règle
+anti-fraude n°4, voir [section 6](#6-règles-anti-fraude-à-connaître)).
 
 ### 3.5 Modifier le taux de TVA d'un produit
 
