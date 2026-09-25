@@ -5,6 +5,7 @@ from app.database import get_db
 from app.deps import require_role
 from app.models import Product, Role, User
 from app.schemas import ProductCreate, ProductImportResult, ProductOut, ProductUpdatePrice
+from app.services import inventory as inventory_service
 from app.services import labels as labels_service
 from app.services import product_import as product_import_service
 from app.services import products as products_service
@@ -33,6 +34,15 @@ def create_product(payload: ProductCreate, db: Session = Depends(get_db), _: Use
 def list_products(db: Session = Depends(get_db), _: User = Depends(require_role(Role.ADMIN, Role.MANAGER, Role.CAISSIER))):
     products = db.query(Product).filter(Product.is_active.is_(True)).all()
     return [_to_out(db, p) for p in products]
+
+
+@router.get("/inventory-sheet.pdf")
+def get_inventory_sheet(db: Session = Depends(get_db), _: User = Depends(require_role(Role.ADMIN, Role.MANAGER))):
+    """Fiche d'inventaire à l'aveugle (sans stock théorique) pour un comptage
+    physique par une tierce personne — voir app/services/inventory.py."""
+    products = db.query(Product).filter(Product.is_active.is_(True)).all()
+    pdf_bytes = inventory_service.build_inventory_sheet_pdf(products)
+    return Response(content=pdf_bytes, media_type="application/pdf")
 
 
 @router.get("/import/template")
