@@ -81,6 +81,13 @@
       <input type="text" id="quote-number-input" placeholder="Numéro du devis (ex: DEV-A7K9M) — scannable via le QR code du devis imprimé" />
       <button id="load-quote" class="secondary">Charger le devis</button>
 
+      <p style="color:var(--text-dim); font-size:0.85rem; margin:10px 0 4px">
+        Client sans son numéro ? Recherchez-le par nom ou téléphone :
+      </p>
+      <input type="text" id="quote-search-input" placeholder="Nom ou téléphone du client" />
+      <button id="search-quote" class="secondary">Rechercher</button>
+      <div id="quote-search-results"></div>
+
       <div id="quote-details" style="display:none; margin-top:14px">
         <p id="quote-info"></p>
         <table>

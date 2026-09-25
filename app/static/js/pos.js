@@ -37,6 +37,12 @@ async function init() {
     await loadQuoteForConversion();
   });
   document.getElementById("convert-quote").addEventListener("click", convertQuote);
+  document.getElementById("search-quote").addEventListener("click", searchQuoteByCustomer);
+  document.getElementById("quote-search-input").addEventListener("keydown", async (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    await searchQuoteByCustomer();
+  });
   document.getElementById("quote-payment-mode").addEventListener("change", () => {
     const mode = document.getElementById("quote-payment-mode").value;
     document.getElementById("quote-credit-fields").style.display = mode === "credit" ? "block" : "none";
@@ -327,6 +333,59 @@ async function createQuote() {
   } catch (err) {
     resultBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
   }
+}
+
+async function searchQuoteByCustomer() {
+  const resultsBox = document.getElementById("quote-search-results");
+  resultsBox.innerHTML = "";
+
+  const term = document.getElementById("quote-search-input").value.trim().toLowerCase();
+  if (!term) return;
+
+  let quotes;
+  try {
+    quotes = await apiFetch("/api/quotes");
+  } catch (err) {
+    resultsBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+    return;
+  }
+
+  const matches = quotes.filter(
+    (q) =>
+      q.status === "en_cours" &&
+      ((q.customer_name && q.customer_name.toLowerCase().includes(term)) ||
+        (q.customer_phone && q.customer_phone.toLowerCase().includes(term)))
+  );
+
+  if (matches.length === 0) {
+    resultsBox.innerHTML = `<p>Aucun devis en cours trouvé pour "${term}".</p>`;
+    return;
+  }
+
+  resultsBox.innerHTML = `
+    <table>
+      <thead><tr><th>Numéro</th><th>Client</th><th>Total</th><th>Créé le</th><th></th></tr></thead>
+      <tbody>
+        ${matches
+          .map(
+            (q) => `
+          <tr>
+            <td>${q.quote_number}</td>
+            <td>${q.customer_name || "—"}${q.customer_phone ? ` (${q.customer_phone})` : ""}</td>
+            <td>${formatGNF(q.total_amount)}</td>
+            <td>${new Date(q.created_at).toLocaleDateString("fr-FR")}</td>
+            <td><button class="secondary" onclick="loadQuoteByNumber('${q.quote_number}')">Charger</button></td>
+          </tr>`
+          )
+          .join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function loadQuoteByNumber(number) {
+  document.getElementById("quote-number-input").value = number;
+  await loadQuoteForConversion();
 }
 
 async function loadQuoteForConversion() {
