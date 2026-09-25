@@ -18,6 +18,10 @@ class MovementAlreadyProcessedError(Exception):
     pass
 
 
+class InvalidQuantityError(Exception):
+    pass
+
+
 def create_movement(
     db: Session,
     product,
@@ -29,6 +33,13 @@ def create_movement(
     reason: str | None = None,
     supplier_id: int | None = None,
 ) -> StockMovement:
+    if qty == 0:
+        raise InvalidQuantityError("La quantité ne peut pas être nulle")
+    if type_ != MovementType.AJUSTEMENT and qty < 0:
+        raise InvalidQuantityError(
+            "Seul un ajustement d'inventaire peut être négatif (pour signaler un manque constaté au comptage)"
+        )
+
     qty_units = convert_to_units(product, qty, unit)
 
     # Une sortie liée à une vente, ou une entrée liée à un retour client déjà

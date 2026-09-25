@@ -45,17 +45,20 @@ def create_movement(
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produit introuvable")
 
-    movement = stock_service.create_movement(
-        db,
-        product,
-        payload.type,
-        payload.qty,
-        payload.unit,
-        created_by=current_user.id,
-        invoice_number=payload.invoice_number,
-        reason=payload.reason,
-        supplier_id=payload.supplier_id,
-    )
+    try:
+        movement = stock_service.create_movement(
+            db,
+            product,
+            payload.type,
+            payload.qty,
+            payload.unit,
+            created_by=current_user.id,
+            invoice_number=payload.invoice_number,
+            reason=payload.reason,
+            supplier_id=payload.supplier_id,
+        )
+    except stock_service.InvalidQuantityError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
     logs_service.record(
         db, current_user.id, "stock_movement_created",
         {"movement_id": movement.id, "type": movement.type.value, "qty_units": movement.qty_units},

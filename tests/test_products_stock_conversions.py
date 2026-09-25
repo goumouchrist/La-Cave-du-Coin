@@ -114,6 +114,34 @@ def test_ajustement_requires_admin_validator(db_session):
         stock_service.validate_movement(db_session, movement, other_manager, approve=True)
 
 
+def test_negative_ajustement_decreases_stock_after_validation(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    product = make_product(db_session)
+
+    entry = stock_service.create_movement(db_session, product, MovementType.ENTREE, qty=100, unit="unite", created_by=admin.id)
+    stock_service.validate_movement(db_session, entry, manager, approve=True)
+    assert products_service.get_current_stock_units(db_session, product.id) == 100
+
+    shortage = stock_service.create_movement(
+        db_session, product, MovementType.AJUSTEMENT, qty=-12, unit="unite", created_by=manager.id,
+        reason="Comptage physique du 2026-09-25 : -12 unités constatées vs stock système",
+    )
+    stock_service.validate_movement(db_session, shortage, admin, approve=True)
+    assert products_service.get_current_stock_units(db_session, product.id) == 88
+
+
+def test_only_ajustement_can_be_negative(db_session):
+    product = make_product(db_session)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+
+    with pytest.raises(stock_service.InvalidQuantityError):
+        stock_service.create_movement(db_session, product, MovementType.CASSE, qty=-3, unit="unite", created_by=manager.id)
+
+    with pytest.raises(stock_service.InvalidQuantityError):
+        stock_service.create_movement(db_session, product, MovementType.AJUSTEMENT, qty=0, unit="unite", created_by=manager.id)
+
+
 def test_caissier_cannot_validate_movement(db_session):
     product = make_product(db_session)
     manager = create_user(db_session, "manager", "pw", Role.MANAGER)

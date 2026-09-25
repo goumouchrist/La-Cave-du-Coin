@@ -121,7 +121,10 @@ class SupplierOut(BaseModel):
 class StockMovementCreate(BaseModel):
     product_id: int
     type: MovementType
-    qty: int = Field(gt=0, description="Quantité exprimée dans l'unité fournie")
+    qty: int = Field(
+        description="Quantité exprimée dans l'unité fournie. Doit être positive, sauf pour un "
+        "ajustement d'inventaire où une valeur négative signale un manque constaté."
+    )
     unit: str = Field(default="unite", description="unite | carton | pack")
     invoice_number: str | None = None
     reason: str | None = None
