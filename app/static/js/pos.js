@@ -31,6 +31,11 @@ async function init() {
   document.getElementById("validate-sale").addEventListener("click", validateSale);
   document.getElementById("create-quote").addEventListener("click", createQuote);
   document.getElementById("load-quote").addEventListener("click", loadQuoteForConversion);
+  document.getElementById("quote-number-input").addEventListener("keydown", async (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    await loadQuoteForConversion();
+  });
   document.getElementById("convert-quote").addEventListener("click", convertQuote);
   document.getElementById("quote-payment-mode").addEventListener("change", () => {
     const mode = document.getElementById("quote-payment-mode").value;
@@ -40,6 +45,11 @@ async function init() {
   document.getElementById("avoir-lookup").addEventListener("click", lookupAvoirCustomer);
   document.getElementById("credit-lookup").addEventListener("click", lookupCreditCustomer);
   document.getElementById("return-search").addEventListener("click", searchReturnSale);
+  document.getElementById("return-transaction").addEventListener("keydown", async (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    await searchReturnSale();
+  });
   document.getElementById("return-submit").addEventListener("click", submitReturn);
 
   renderCart();

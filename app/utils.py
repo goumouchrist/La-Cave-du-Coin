@@ -1,7 +1,11 @@
-import uuid
+import secrets
 from datetime import datetime, timezone
 
 from app.config import settings
+
+# Sans 0/O, 1/I/L : évite les confusions à la relecture d'un numéro imprimé
+# ou tapé au clavier.
+_SHORT_CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
 
 
 def to_aware_utc(dt: datetime) -> datetime:
@@ -21,14 +25,7 @@ def round_gnf(amount: int) -> int:
     return int(round(amount / step) * step)
 
 
-def _generate_reference(prefix: str) -> str:
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-    return f"{prefix}-{ts}-{uuid.uuid4().hex[:6].upper()}"
-
-
-def generate_transaction_number() -> str:
-    return _generate_reference("TX")
-
-
-def generate_quote_number() -> str:
-    return _generate_reference("DEV")
+def generate_short_code(length: int = 5) -> str:
+    """Code court aléatoire (numéro de vente/devis) : facile à taper au clavier,
+    à lire sur un reçu papier, ou à scanner via le QR code imprimé."""
+    return "".join(secrets.choice(_SHORT_CODE_ALPHABET) for _ in range(length))

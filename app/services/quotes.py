@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.models import Product, Quote, QuoteItem, QuoteStatus, Sale, User
 from app.services import sales as sales_service
-from app.utils import generate_quote_number
+from app.utils import generate_short_code
+
+QUOTE_NUMBER_MAX_ATTEMPTS = 5
 
 
 class ProductNotFoundError(Exception):
@@ -18,6 +20,20 @@ class QuoteNotConvertibleError(Exception):
 
 class QuantityConfirmationRequiredError(Exception):
     pass
+
+
+class QuoteNumberGenerationError(Exception):
+    pass
+
+
+def _generate_unique_quote_number(db: Session) -> str:
+    """Code court (ex: DEV-A7K9M) plutôt qu'horodaté : à taper/lire facilement
+    au comptoir, ou à scanner directement via le QR code du devis imprimé."""
+    for _ in range(QUOTE_NUMBER_MAX_ATTEMPTS):
+        candidate = f"DEV-{generate_short_code()}"
+        if not db.query(Quote).filter(Quote.quote_number == candidate).first():
+            return candidate
+    raise QuoteNumberGenerationError("Impossible de générer un numéro de devis unique, réessayez")
 
 
 def create_quote(
@@ -56,7 +72,7 @@ def create_quote(
     expires_at = date.today() + timedelta(days=days) if days else None
 
     quote = Quote(
-        quote_number=generate_quote_number(),
+        quote_number=_generate_unique_quote_number(db),
         created_by=creator.id,
         customer_id=customer_id,
         customer_name=customer_name,

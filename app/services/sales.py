@@ -7,11 +7,27 @@ from app.models import CashSession, CashSessionStatus, Customer, MovementType, P
 from app.services import customers as customers_service
 from app.services.products import get_current_stock_units
 from app.services.stock import create_movement
-from app.utils import generate_transaction_number, round_gnf, to_aware_utc
+from app.utils import generate_short_code, round_gnf, to_aware_utc
+
+TRANSACTION_NUMBER_MAX_ATTEMPTS = 5
 
 
 class CashSessionClosedError(Exception):
     pass
+
+
+class TransactionNumberGenerationError(Exception):
+    pass
+
+
+def _generate_unique_transaction_number(db: Session) -> str:
+    """Code court (ex: TX-A7K9M) : facile à taper/lire au comptoir, ou à
+    scanner via le QR code du reçu imprimé."""
+    for _ in range(TRANSACTION_NUMBER_MAX_ATTEMPTS):
+        candidate = f"TX-{generate_short_code()}"
+        if not db.query(Sale).filter(Sale.transaction_number == candidate).first():
+            return candidate
+    raise TransactionNumberGenerationError("Impossible de générer un numéro de transaction unique, réessayez")
 
 
 class CustomerRequiredError(Exception):
@@ -133,7 +149,7 @@ def create_sale(
                 customers_service.record_debt(db, customer, remaining_due)
 
     sale = Sale(
-        transaction_number=generate_transaction_number(),
+        transaction_number=_generate_unique_transaction_number(db),
         cash_session_id=cash_session_id,
         cashier_id=cashier.id,
         payment_mode=payment_mode,

@@ -69,6 +69,21 @@ def test_create_quote_more_than_five_identical_items_requires_confirmation(db_se
     assert sale.total_amount == 6 * product.prix_vente
 
 
+def test_quote_number_is_short_and_unique(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager)
+
+    numbers = set()
+    for _ in range(20):
+        quote = quotes_service.create_quote(db_session, cashier, items=[{"product_id": product.id, "qty": 1}])
+        assert quote.quote_number.startswith("DEV-")
+        assert len(quote.quote_number) == len("DEV-") + 5
+        numbers.add(quote.quote_number)
+    assert len(numbers) == 20  # jamais de collision sur 20 générations
+
+
 def test_create_quote_unknown_product_raises(db_session):
     cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
 

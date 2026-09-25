@@ -49,6 +49,25 @@ def test_create_sale_decrements_stock_and_computes_change(db_session):
     assert sale.total_amount == 10000
     assert sale.change_amount == 1000
     assert products_service.get_current_stock_units(db_session, product.id) == 98
+    assert sale.transaction_number.startswith("TX-")
+    assert len(sale.transaction_number) == len("TX-") + 5
+
+
+def test_transaction_numbers_are_unique(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager, qty_units=100)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+
+    numbers = set()
+    for _ in range(20):
+        sale = sales_service.create_sale(
+            db_session, cashier, session_.id, PaymentMode.ESPECES, amount_given=5000,
+            items=[{"product_id": product.id, "qty": 1}],
+        )
+        numbers.add(sale.transaction_number)
+    assert len(numbers) == 20
 
 
 @pytest.mark.parametrize("payment_mode", [PaymentMode.SOUTRA_MONEY, PaymentMode.CREDIT_MONEY, PaymentMode.PAYCARD])
