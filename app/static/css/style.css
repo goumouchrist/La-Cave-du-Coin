@@ -165,11 +165,15 @@ main {
 .today-tile:nth-child(4) { animation-delay: 0.15s; }
 .today-tile:nth-child(5) { animation-delay: 0.2s; }
 
-.today-tile[data-accent="gold"]    { --tile-accent: var(--gold); }
-.today-tile[data-accent="success"] { --tile-accent: var(--success); }
-.today-tile[data-accent="danger"]  { --tile-accent: var(--danger); }
-.today-tile[data-accent="info"]    { --tile-accent: #5a7a9a; }
-.today-tile[data-accent="violet"]  { --tile-accent: #9a5a8f; }
+/* --tile-accent-text : version éclaircie de l'accent, pour porter la couleur
+   sur le chiffre lui-même tout en restant lisible sur le fond sombre (même
+   principe que .alert-success/.alert-error : le ton saturé reste réservé à la
+   bordure/l'accent, un ton clair porte le texte). */
+.today-tile[data-accent="gold"]    { --tile-accent: var(--gold);    --tile-accent-text: var(--gold-light); }
+.today-tile[data-accent="success"] { --tile-accent: var(--success); --tile-accent-text: #b7e2c4; }
+.today-tile[data-accent="danger"]  { --tile-accent: var(--danger);  --tile-accent-text: #ffb3a3; }
+.today-tile[data-accent="info"]    { --tile-accent: #5a7a9a;        --tile-accent-text: #a9c9e8; }
+.today-tile[data-accent="violet"]  { --tile-accent: #9a5a8f;        --tile-accent-text: #ddb0d4; }
 
 .today-tile-label {
   font-size: 0.85em;
@@ -180,7 +184,7 @@ main {
 .today-tile-value {
   font-size: 1.7em;
   font-weight: bold;
-  color: var(--gold-light);
+  color: var(--tile-accent-text, var(--gold-light));
   font-variant-numeric: proportional-nums;
   display: inline-block;
 }
