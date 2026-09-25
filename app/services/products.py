@@ -64,6 +64,60 @@ def get_current_stock_units(db: Session, product_id: int) -> int:
     return int(in_qty) - int(out_qty) + int(adjustments)
 
 
+def _get_consumed_units(db: Session, product_id: int) -> int:
+    """Unités sorties du stock (ventes + casse + don, plus les ajustements
+    négatifs en valeur absolue), validées — utilisé pour répartir la
+    consommation sur les lots d'entrée (FEFO, voir get_batches_remaining)."""
+    sortie_types = (MovementType.SORTIE_VENTE, MovementType.CASSE, MovementType.DON)
+    out_qty = db.query(func.coalesce(func.sum(StockMovement.qty_units), 0)).filter(
+        StockMovement.product_id == product_id,
+        StockMovement.type.in_(sortie_types),
+        StockMovement.status == MovementStatus.VALIDATED,
+    ).scalar()
+
+    negative_adjustments = db.query(func.coalesce(func.sum(StockMovement.qty_units), 0)).filter(
+        StockMovement.product_id == product_id,
+        StockMovement.type == MovementType.AJUSTEMENT,
+        StockMovement.status == MovementStatus.VALIDATED,
+        StockMovement.qty_units < 0,
+    ).scalar()
+
+    return int(out_qty) - int(negative_adjustments)
+
+
+def get_batches_remaining(db: Session, product_id: int) -> list[dict]:
+    """Répartit la consommation totale sur les lots d'entrée validés, du plus
+    proche de la péremption au plus lointain (lots sans date en dernier) —
+    méthode FEFO (First Expired, First Out). Les retours clients et les
+    ajustements positifs (surplus) réintègrent du stock sans date de
+    péremption connue et ne sont donc pas rattachés à un lot : si la
+    consommation dépasse le total des lots datés, le surplus est simplement
+    absorbé (lots à 0, jamais négatifs)."""
+    batches = (
+        db.query(StockMovement)
+        .filter(
+            StockMovement.product_id == product_id,
+            StockMovement.type == MovementType.ENTREE,
+            StockMovement.status == MovementStatus.VALIDATED,
+        )
+        .order_by(StockMovement.expiry_date.is_(None), StockMovement.expiry_date.asc(), StockMovement.created_at.asc())
+        .all()
+    )
+
+    remaining_to_deplete = _get_consumed_units(db, product_id)
+    result = []
+    for batch in batches:
+        consumed_here = min(batch.qty_units, remaining_to_deplete)
+        remaining_to_deplete -= consumed_here
+        result.append({
+            "movement_id": batch.id,
+            "expiry_date": batch.expiry_date,
+            "qty_units": batch.qty_units,
+            "remaining_units": batch.qty_units - consumed_here,
+        })
+    return result
+
+
 def create_product(db: Session, data: dict, is_promo: bool = False) -> Product:
     validate_price(data["prix_achat"], data["prix_vente"], is_promo)
     if data.get("barcode"):

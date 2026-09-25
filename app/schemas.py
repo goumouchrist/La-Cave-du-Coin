@@ -127,6 +127,7 @@ class StockMovementCreate(BaseModel):
     )
     unit: str = Field(default="unite", description="unite | carton | pack")
     invoice_number: str | None = None
+    expiry_date: date | None = Field(default=None, description="Date de péremption du lot (pertinent pour une entrée)")
     reason: str | None = None
     supplier_id: int | None = None
 
@@ -143,6 +144,7 @@ class StockMovementOut(BaseModel):
     type: MovementType
     qty_units: int
     invoice_number: str | None
+    expiry_date: date | None
     reason: str | None
     status: MovementStatus
     created_by: int

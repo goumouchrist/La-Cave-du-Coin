@@ -285,10 +285,20 @@ Menu **"Stock"** :
 - **Enregistrer un mouvement de stock** : entrée (réception fournisseur),
   casse, don, ou ajustement d'inventaire. Choisir le produit, la quantité (en
   unité, carton ou pack — la conversion est automatique), et pour une entrée,
-  le fournisseur et le numéro de facture. **Pour un ajustement uniquement**,
-  la quantité peut être négative (ex : `-12`) pour signaler un **manque**
-  constaté ; une valeur positive signale un **surplus**. Pour tous les autres
-  types de mouvement, la quantité doit rester positive.
+  le fournisseur, le numéro de facture, et la **date de péremption du lot**
+  (facultative — utile pour les produits alimentaires/périssables). **Pour un
+  ajustement uniquement**, la quantité peut être négative (ex : `-12`) pour
+  signaler un **manque** constaté ; une valeur positive signale un
+  **surplus**. Pour tous les autres types de mouvement, la quantité doit
+  rester positive.
+- **Suivi des dates de péremption par lot** : chaque entrée avec une date de
+  péremption forme un lot distinct — si plusieurs livraisons d'un même
+  produit sont en stock en même temps avec des dates différentes, le système
+  sait exactement lequel expire le plus tôt et considère qu'il est consommé
+  en priorité (méthode FEFO — premier expiré, premier sorti). Les lots dont
+  la péremption approche (7 jours par défaut) apparaissent automatiquement
+  dans "Alertes de péremption" sur la page **Statistiques** (voir
+  [3.6](#36-statistiques-et-prévisions)).
 - **Fiche d'inventaire à l'aveugle** : bouton dédié au-dessus du tableau
   "Produits & stock courant" — génère un PDF listant tous les produits actifs
   (catégorie, code-barres, unités par carton/pack) avec des colonnes vides à
@@ -349,6 +359,8 @@ Menu **"Statistiques"** :
 - Prévision du chiffre d'affaires du lendemain.
 - Alertes de rupture de stock (produits qui vont manquer bientôt, avec le
   nombre de jours restants estimé).
+- Alertes de péremption (lots dont la date de péremption approche, avec la
+  quantité restante de ce lot précis — voir [3.1](#31-gérer-le-stock)).
 
 ### 3.7 Annuler une vente
 

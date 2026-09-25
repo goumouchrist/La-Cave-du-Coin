@@ -210,6 +210,7 @@ async function createMovement() {
     qty: parseInt(document.getElementById("m-qty").value || "0", 10),
     unit: document.getElementById("m-unit").value,
     invoice_number: document.getElementById("m-invoice").value || null,
+    expiry_date: document.getElementById("m-expiry").value || null,
     reason: document.getElementById("m-reason").value || null,
     supplier_id: document.getElementById("m-supplier").value ? parseInt(document.getElementById("m-supplier").value, 10) : null,
   };

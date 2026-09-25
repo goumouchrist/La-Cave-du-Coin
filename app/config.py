@@ -11,6 +11,7 @@ class Settings(BaseSettings):
 
     CASH_GAP_ALERT_THRESHOLD_GNF: int = 10000
     STOCK_ALERT_DEFAULT_CARTONS: int = 5
+    EXPIRY_ALERT_DAYS: int = 7
     ROUNDING_STEP_GNF: int = 50
     CANCEL_WINDOW_MINUTES: int = 5
     MIN_MARGIN_RATIO: float = 0.95

@@ -1,3 +1,5 @@
+from datetime import date, timedelta
+
 import pytest
 
 from app.models import MovementType, Product, Role
@@ -140,6 +142,54 @@ def test_only_ajustement_can_be_negative(db_session):
 
     with pytest.raises(stock_service.InvalidQuantityError):
         stock_service.create_movement(db_session, product, MovementType.AJUSTEMENT, qty=0, unit="unite", created_by=manager.id)
+
+
+def test_batches_remaining_depletes_earliest_expiry_first(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    product = make_product(db_session)
+
+    soon = date.today() + timedelta(days=5)
+    later = date.today() + timedelta(days=30)
+
+    batch1 = stock_service.create_movement(
+        db_session, product, MovementType.ENTREE, qty=10, unit="unite", created_by=admin.id, expiry_date=soon,
+    )
+    stock_service.validate_movement(db_session, batch1, manager, approve=True)
+    batch2 = stock_service.create_movement(
+        db_session, product, MovementType.ENTREE, qty=10, unit="unite", created_by=admin.id, expiry_date=later,
+    )
+    stock_service.validate_movement(db_session, batch2, manager, approve=True)
+
+    # Vente de 12 unités : doit épuiser tout le lot qui expire le plus tôt (10)
+    # puis mordre sur le deuxième lot (2), sans toucher au reste (8).
+    sale_movement = stock_service.create_movement(db_session, product, MovementType.SORTIE_VENTE, qty=12, unit="unite", created_by=manager.id)
+    assert sale_movement.status.value == "validated"  # sortie_vente auto-validée
+
+    batches = products_service.get_batches_remaining(db_session, product.id)
+    assert len(batches) == 2
+    assert batches[0]["expiry_date"] == soon
+    assert batches[0]["remaining_units"] == 0
+    assert batches[1]["expiry_date"] == later
+    assert batches[1]["remaining_units"] == 8
+
+
+def test_batches_remaining_orders_undated_batches_last(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    product = make_product(db_session)
+
+    undated = stock_service.create_movement(db_session, product, MovementType.ENTREE, qty=5, unit="unite", created_by=admin.id)
+    stock_service.validate_movement(db_session, undated, manager, approve=True)
+    dated = stock_service.create_movement(
+        db_session, product, MovementType.ENTREE, qty=5, unit="unite", created_by=admin.id,
+        expiry_date=date.today() + timedelta(days=10),
+    )
+    stock_service.validate_movement(db_session, dated, manager, approve=True)
+
+    batches = products_service.get_batches_remaining(db_session, product.id)
+    assert batches[0]["expiry_date"] is not None  # le lot daté est consommé avant le lot sans date
+    assert batches[1]["expiry_date"] is None
 
 
 def test_caissier_cannot_validate_movement(db_session):

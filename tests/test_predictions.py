@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from app.models import (
     MovementStatus,
@@ -143,3 +143,73 @@ def test_revenue_forecast_predicts_growth_trend(db_session):
 def test_revenue_forecast_with_no_history_returns_zero(db_session):
     forecast = predictions_service.forecast_next_day_revenue(db_session, history_days=30)
     assert forecast == {"predicted_revenue_gnf": 0, "based_on_days": 0}
+
+
+def test_expiring_batches_within_window(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    product = make_product(db_session, name="Yaourt", barcode="3333333333333")
+
+    soon = date.today() + timedelta(days=3)
+    far = date.today() + timedelta(days=60)
+
+    db_session.add_all([
+        StockMovement(
+            product_id=product.id, type=MovementType.ENTREE, qty_units=20, expiry_date=soon,
+            status=MovementStatus.VALIDATED, created_by=admin.id, validated_by=admin.id,
+        ),
+        StockMovement(
+            product_id=product.id, type=MovementType.ENTREE, qty_units=20, expiry_date=far,
+            status=MovementStatus.VALIDATED, created_by=admin.id, validated_by=admin.id,
+        ),
+    ])
+    db_session.commit()
+
+    alerts = predictions_service.expiring_batches(db_session, product, within_days=7)
+    assert len(alerts) == 1
+    assert alerts[0]["expiry_date"] == soon
+    assert alerts[0]["remaining_units"] == 20
+    assert alerts[0]["days_left"] == 3
+
+
+def test_expiring_batches_excludes_depleted_batch(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    product = make_product(db_session, name="Yaourt", barcode="4444444444444")
+    soon = date.today() + timedelta(days=2)
+
+    db_session.add_all([
+        StockMovement(
+            product_id=product.id, type=MovementType.ENTREE, qty_units=10, expiry_date=soon,
+            status=MovementStatus.VALIDATED, created_by=admin.id, validated_by=admin.id,
+        ),
+        StockMovement(
+            product_id=product.id, type=MovementType.SORTIE_VENTE, qty_units=10,
+            status=MovementStatus.VALIDATED, created_by=admin.id, validated_by=admin.id,
+        ),
+    ])
+    db_session.commit()
+
+    assert predictions_service.expiring_batches(db_session, product, within_days=7) == []
+
+
+def test_expiry_alerts_endpoint_forbidden_for_caissier(client, auth_headers):
+    headers = auth_headers("cashier", Role.CAISSIER)
+    res = client.get("/api/stats/expiry-alerts", headers=headers)
+    assert res.status_code == 403
+
+
+def test_expiry_alerts_endpoint_returns_alerts_for_manager(client, auth_headers, db_session):
+    headers = auth_headers("manager", Role.MANAGER)
+    admin = create_user(db_session, "admin", "pw2", Role.ADMIN)
+    product = make_product(db_session, name="Yaourt", barcode="5555555555555")
+    soon = date.today() + timedelta(days=1)
+
+    db_session.add(StockMovement(
+        product_id=product.id, type=MovementType.ENTREE, qty_units=5, expiry_date=soon,
+        status=MovementStatus.VALIDATED, created_by=admin.id, validated_by=admin.id,
+    ))
+    db_session.commit()
+
+    res = client.get("/api/stats/expiry-alerts", headers=headers)
+    assert res.status_code == 200, res.text
+    alerts = res.json()
+    assert any(a["product_id"] == product.id and a["remaining_units"] == 5 for a in alerts)

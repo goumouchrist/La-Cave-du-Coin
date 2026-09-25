@@ -54,6 +54,7 @@ def create_movement(
             payload.unit,
             created_by=current_user.id,
             invoice_number=payload.invoice_number,
+            expiry_date=payload.expiry_date,
             reason=payload.reason,
             supplier_id=payload.supplier_id,
         )

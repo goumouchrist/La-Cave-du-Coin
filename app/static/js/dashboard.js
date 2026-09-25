@@ -157,6 +157,21 @@ async function loadForecasts() {
       </tr>`
     )
     .join("");
+
+  const expiring = await apiFetch("/api/stats/expiry-alerts");
+  const expiryBody = document.getElementById("expiry-body");
+  expiryBody.innerHTML = expiring
+    .sort((a, b) => a.days_left - b.days_left)
+    .map(
+      (e) => `
+      <tr style="${e.days_left <= 3 ? "color:#ff9a8a" : ""}">
+        <td>${e.name}</td>
+        <td>${e.remaining_units}</td>
+        <td>${e.expiry_date}</td>
+        <td>${e.days_left} ${e.days_left <= 3 ? "⚠️ Péremption proche" : ""}</td>
+      </tr>`
+    )
+    .join("");
 }
 
 init();

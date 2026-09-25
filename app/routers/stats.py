@@ -5,6 +5,7 @@ from sqlalchemy import func
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user, require_role
 from app.models import Log, Product, Quote, Role, Sale, SaleItem, SaleStatus, StockMovement, User
@@ -45,6 +46,18 @@ def stockout_forecast(
 ):
     products = db.query(Product).filter(Product.is_active.is_(True)).all()
     return [predictions_service.stockout_forecast(db, p) for p in products]
+
+
+@router.get("/expiry-alerts")
+def expiry_alerts(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_role(Role.ADMIN, Role.MANAGER)),
+):
+    products = db.query(Product).filter(Product.is_active.is_(True)).all()
+    alerts = []
+    for p in products:
+        alerts.extend(predictions_service.expiring_batches(db, p, settings.EXPIRY_ALERT_DAYS))
+    return alerts
 
 
 @router.get("/revenue-forecast")

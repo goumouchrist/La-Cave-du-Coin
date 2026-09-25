@@ -126,6 +126,7 @@ class StockMovement(Base):
     type: Mapped[MovementType] = mapped_column(Enum(MovementType))
     qty_units: Mapped[int] = mapped_column(Integer)
     invoice_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[MovementStatus] = mapped_column(Enum(MovementStatus), default=MovementStatus.VALIDATED)
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))

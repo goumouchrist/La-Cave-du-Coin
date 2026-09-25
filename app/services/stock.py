@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -32,6 +32,7 @@ def create_movement(
     invoice_number: str | None = None,
     reason: str | None = None,
     supplier_id: int | None = None,
+    expiry_date: date | None = None,
 ) -> StockMovement:
     if qty == 0:
         raise InvalidQuantityError("La quantité ne peut pas être nulle")
@@ -56,6 +57,7 @@ def create_movement(
         type=type_,
         qty_units=qty_units,
         invoice_number=invoice_number,
+        expiry_date=expiry_date,
         reason=reason,
         status=status,
         created_by=created_by,

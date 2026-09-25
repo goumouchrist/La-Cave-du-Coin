@@ -1,10 +1,10 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models import MovementStatus, MovementType, Product, Sale, SaleItem, SaleStatus, StockMovement
-from app.services.products import get_current_stock_units
+from app.services.products import get_batches_remaining, get_current_stock_units
 
 
 def top_selling_products(db: Session, days: int = 7, limit: int = 5) -> list[dict]:
@@ -51,6 +51,23 @@ def stockout_forecast(db: Session, product: Product, lookback_days: int = 30) ->
         "days_remaining": round(days_remaining, 1),
         "alert": days_remaining < 3,
     }
+
+
+def expiring_batches(db: Session, product: Product, within_days: int) -> list[dict]:
+    cutoff = date.today() + timedelta(days=within_days)
+    batches = get_batches_remaining(db, product.id)
+    return [
+        {
+            "product_id": product.id,
+            "name": product.name,
+            "movement_id": b["movement_id"],
+            "expiry_date": b["expiry_date"],
+            "remaining_units": b["remaining_units"],
+            "days_left": (b["expiry_date"] - date.today()).days,
+        }
+        for b in batches
+        if b["expiry_date"] is not None and b["remaining_units"] > 0 and b["expiry_date"] <= cutoff
+    ]
 
 
 def _linear_regression(xs: list[float], ys: list[float]) -> tuple[float, float]:
