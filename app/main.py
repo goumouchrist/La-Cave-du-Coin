@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -16,6 +17,12 @@ app = FastAPI(title="La Cave du Coin — Caisse & Stock", version="1.0.0")
 
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
+# Cache-busting : change à chaque redémarrage du serveur (donc à chaque
+# déploiement), pour que le navigateur recharge automatiquement le CSS/JS
+# mis à jour au lieu de garder une version en cache jusqu'à un hard refresh
+# manuel. Disponible dans tous les templates via {{ static_version }}.
+templates.env.globals["static_version"] = str(int(time.time()))
 
 app.include_router(auth.router)
 app.include_router(users.router)
