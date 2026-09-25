@@ -49,6 +49,22 @@ Monnaie : **Franc Guinéen (GNF)**.
   **conversion automatique** vers l'unité de base, mouvements
   entrée/sortie-vente/casse/don/ajustement, **workflow de double validation**
   (saisie + supervision) pour tout mouvement hors vente, alertes de seuil bas.
+  Un ajustement d'inventaire accepte une quantité **négative** (manque
+  constaté) ou positive (surplus) — tous les autres types de mouvement
+  restent strictement positifs.
+- **Devis** : créer un devis (prix figé, sans encaissement ni sortie de
+  stock, ne nécessite pas de session de caisse ouverte), l'imprimer en PDF,
+  puis le convertir en une vraie vente en un clic (réutilise le prix figé,
+  décrémente le stock, encaisse le paiement). Un devis expiré ou déjà converti
+  ne peut plus être reconverti.
+- **Fiche d'inventaire à l'aveugle** : PDF listant tous les produits actifs
+  avec des colonnes vides à remplir à la main, **sans afficher le stock
+  théorique du système** — pensé pour un comptage physique fiable par une
+  tierce personne.
+- **Tableau de bord "Aujourd'hui"** : indicateurs du jour (CA, ventes, devis,
+  mouvements de stock, écarts de caisse) et flux d'activité chronologique,
+  construits à partir du journal `logs` existant, rafraîchis automatiquement
+  toutes les 15 secondes (pas de websockets).
 - **Fournisseurs** : fiche fournisseur (nom, téléphone, adresse), rattachée en
   fournisseur habituel sur un produit et/ou à chaque mouvement d'entrée
   (avec n° de facture), avec **historique des livraisons par fournisseur**.
@@ -146,13 +162,16 @@ Créés par `scripts/seed_data.py` :
 ./.venv/Scripts/python.exe -m pytest -q
 ```
 
-39 tests couvrant : permissions par rôle, conversions d'unités
+149 tests couvrant : permissions par rôle, conversions d'unités
 (carton/pack/unité), ouverture/fermeture de caisse et blocage sur écart,
 création de vente (stock, monnaie, règle des >5 articles identiques),
 règles anti-fraude (annulation, prix minimum, duplicata, double validation
-stock, double scan), et le module de prédiction (top ventes, prévision de
-rupture, régression linéaire de CA). Base de données SQLite en mémoire,
-aucune dépendance externe requise.
+stock, double scan), le module de prédiction (top ventes, prévision de
+rupture, régression linéaire de CA), les retours/avoir/crédit client, les
+imports CSV (produits, mouvements), les sauvegardes, les emails, **les
+devis** (création sans session, prix figé, conversion, expiration), **le
+tableau de bord "Aujourd'hui"**, et **la fiche d'inventaire à l'aveugle**.
+Base de données SQLite en mémoire, aucune dépendance externe requise.
 
 ## Utilisation
 
@@ -176,14 +195,15 @@ aucune dépendance externe requise.
 | 2e impression d'un ticket → `DUPLICATA` | `app/services/sales.py::register_print` |
 | Modification de stock hors vente → double validation (saisie + supervision) | `app/services/stock.py::create_movement` / `validate_movement` |
 | Ajustement d'inventaire → validation Admin uniquement | `app/services/stock.py::validate_movement` |
-| Vente de > 5 articles identiques → confirmation de quantité requise | `app/services/sales.py::create_sale` |
+| Vente de > 5 articles identiques → confirmation de quantité requise (s'applique aussi à la création d'un devis) | `app/services/sales.py::create_sale`, `app/services/quotes.py::create_quote` |
 | Double scan du même produit en < 2s → alerte | `app/services/scan.py::log_scan` |
 | Toute action sensible tracée (utilisateur, IP, horodatage) | table `logs`, `app/services/logs.py` |
 
 ## Modèle de données
 
 `users`, `products` (avec `barcode` unique indexé), `stock_movements`,
-`cash_sessions`, `sales`, `sale_items`, `logs`, `scan_logs` — voir
+`cash_sessions`, `sales`, `sale_items`, `quotes`, `quote_items`, `customers`,
+`logs`, `scan_logs` — voir
 [`app/models.py`](app/models.py) pour le détail des colonnes. Le stock courant
 d'un produit n'est pas stocké mais **dérivé** des mouvements validés
 (`app/services/products.py::get_current_stock_units`), pour garantir que la
@@ -193,7 +213,8 @@ traçabilité (§1 du cahier des charges) reste la source de vérité unique.
 
 Documentation interactive complète sur `/docs` une fois le serveur lancé.
 Routers principaux : `/api/auth`, `/api/users`, `/api/products`,
-`/api/stock`, `/api/suppliers`, `/api/cash-sessions`, `/api/sales`, `/api/stats`.
+`/api/stock`, `/api/suppliers`, `/api/cash-sessions`, `/api/sales`,
+`/api/quotes`, `/api/customers`, `/api/stats`.
 
 ## Déploiement (MEP)
 

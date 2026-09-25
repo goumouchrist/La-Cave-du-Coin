@@ -277,7 +277,16 @@ Menu **"Stock"** :
 - **Enregistrer un mouvement de stock** : entrée (réception fournisseur),
   casse, don, ou ajustement d'inventaire. Choisir le produit, la quantité (en
   unité, carton ou pack — la conversion est automatique), et pour une entrée,
-  le fournisseur et le numéro de facture.
+  le fournisseur et le numéro de facture. **Pour un ajustement uniquement**,
+  la quantité peut être négative (ex : `-12`) pour signaler un **manque**
+  constaté ; une valeur positive signale un **surplus**. Pour tous les autres
+  types de mouvement, la quantité doit rester positive.
+- **Fiche d'inventaire à l'aveugle** : bouton dédié au-dessus du tableau
+  "Produits & stock courant" — génère un PDF listant tous les produits actifs
+  (catégorie, code-barres, unités par carton/pack) avec des colonnes vides à
+  remplir à la main, **sans afficher le stock théorique du système**. Pensé
+  pour faire compter physiquement le stock par une tierce personne sans la
+  biaiser (voir [3.8](#38-comptages-physiques-réguliers-protection-contre-la-substitution-de-produits)).
 
 **Important : tout mouvement hors vente reste "en attente" jusqu'à ce
 qu'une deuxième personne le valide** (voir tableau "Mouvements en attente de
@@ -321,6 +330,12 @@ Ce taux est **uniquement informatif** : il apparaît sur le reçu ("Dont TVA :
 ### 3.6 Statistiques et prévisions
 
 Menu **"Statistiques"** :
+- **Section "Aujourd'hui"** en haut de la page : CA du jour, nombre de ventes,
+  nombre de devis créés/convertis, nombre de mouvements de stock, et nombre
+  d'écarts de caisse signalés — ainsi qu'un flux d'activité chronologique de
+  la journée (ventes, devis, mouvements de stock, sessions caisse, créances,
+  refus anti-fraude...). **Actualisation automatique toutes les 15 secondes**,
+  pas besoin de recharger la page.
 - Top 5 des ventes des 7 derniers jours.
 - Répartition des ventes par catégorie et par caissier.
 - Prévision du chiffre d'affaires du lendemain.
@@ -350,19 +365,22 @@ régulier, en dehors du logiciel :
 
 1. **Interdire tout stock ou objet personnel du caissier à proximité du poste
    de caisse et des rayons.** Une règle simple, affichée, sans exception.
-2. **Compter physiquement le stock réel** d'une sélection de produits (ou de
-   tout le stock, selon le temps disponible), à une fréquence régulière —
-   par exemple chaque semaine, plus des comptages surprises non annoncés de
-   temps en temps.
+2. **Faire compter physiquement le stock réel** par une personne extérieure
+   si possible, à l'aide de la **fiche d'inventaire à l'aveugle** (bouton
+   dans "Stock", voir [3.1](#31-gérer-le-stock)) — elle ne montre volontairement
+   aucun chiffre du système, pour que le comptage ne soit pas influencé.
+   À faire à une fréquence régulière (ex : chaque semaine), plus des
+   comptages surprises non annoncés de temps en temps.
 3. **Comparer ce comptage au stock théorique affiché** dans "Stock" →
    tableau "Produits & stock courant" (colonne stock courant, calculée à
-   partir des mouvements validés).
+   partir des mouvements validés), une fois la fiche remplie et signée.
 4. **Si un écart est constaté**, l'enregistrer comme un mouvement de stock de
-   type **"Ajustement"** (voir [3.1](#31-gérer-le-stock)) avec un motif
-   précis (ex : "comptage du 15/09 : -12 unités constatées vs stock système,
-   à investiguer"). Ce mouvement nécessite une validation **Admin**, ce qui
-   garantit qu'un écart n'est jamais discrètement corrigé sans qu'un
-   responsable en soit informé.
+   type **"Ajustement"** (voir [3.1](#31-gérer-le-stock)) — quantité
+   **négative** pour un manque, positive pour un surplus — avec un motif
+   précis (ex : "comptage du 25/09 par [nom], vérifié par [Manager] : -12
+   unités constatées vs stock système, à investiguer"). Ce mouvement
+   nécessite une validation **Admin**, ce qui garantit qu'un écart n'est
+   jamais discrètement corrigé sans qu'un responsable en soit informé.
 5. **Un écart récurrent, toujours dans le même sens, sur les mêmes produits,
    ou concentré sur les sessions d'un même caissier** est le signal à
    surveiller — un comptage isolé prouve peu de choses, une tendance dans le
@@ -482,6 +500,11 @@ Deux causes possibles : aucune session de caisse n'est ouverte (contrairement
 à la création d'un devis, la conversion en nécessite une), ou le devis a
 dépassé sa date de validité (15 jours par défaut) — dans ce cas il faut
 refaire un nouveau devis (voir [2.8](#28-convertir-un-devis-en-vente)).
+
+**"Le système refuse ma quantité négative pour un mouvement de stock."**
+Une quantité négative n'est acceptée que pour le type **"Ajustement"** (pour
+signaler un manque constaté au comptage). Pour tous les autres types (entrée,
+casse, don), la quantité doit rester positive.
 
 **"Je veux supprimer un produit ou un fournisseur par erreur créé."**
 La "suppression" désactive l'élément sans effacer son historique (ventes,
