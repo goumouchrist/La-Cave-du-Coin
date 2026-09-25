@@ -64,6 +64,13 @@ class SaleStatus(str, enum.Enum):
     ANNULEE = "annulee"
 
 
+class QuoteStatus(str, enum.Enum):
+    EN_COURS = "en_cours"
+    CONVERTI = "converti"
+    ANNULE = "annule"
+    EXPIRE = "expire"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -187,6 +194,41 @@ class SaleItem(Base):
     quantity_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     sale: Mapped["Sale"] = relationship(back_populates="items")
+    product: Mapped["Product"] = relationship()
+
+
+class Quote(Base):
+    __tablename__ = "quotes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    quote_number: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id"), nullable=True)
+    customer_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    customer_phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    total_amount: Mapped[int] = mapped_column(Integer)
+    status: Mapped[QuoteStatus] = mapped_column(Enum(QuoteStatus), default=QuoteStatus.EN_COURS)
+    expires_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    converted_sale_id: Mapped[int | None] = mapped_column(ForeignKey("sales.id"), nullable=True)
+    converted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    print_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    items: Mapped[list["QuoteItem"]] = relationship(back_populates="quote", cascade="all, delete-orphan")
+    converted_sale: Mapped["Sale | None"] = relationship()
+
+
+class QuoteItem(Base):
+    __tablename__ = "quote_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    quote_id: Mapped[int] = mapped_column(ForeignKey("quotes.id"))
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
+    qty_units: Mapped[int] = mapped_column(Integer)
+    unit_price: Mapped[int] = mapped_column(Integer)
+
+    quote: Mapped["Quote"] = relationship(back_populates="items")
     product: Mapped["Product"] = relationship()
 
 

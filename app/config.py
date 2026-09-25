@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     IDENTICAL_ITEMS_CONFIRM_THRESHOLD: int = 5
     DOUBLE_SCAN_WINDOW_SECONDS: int = 2
     CREDIT_LIMIT_PER_CUSTOMER: int = 2
+    QUOTE_VALIDITY_DAYS: int = 15
 
     STORE_NAME: str = "La Cave du Coin"
     STORE_ADDRESS: str = "Conakry, Guinée"

@@ -26,6 +26,13 @@
         <tbody id="cart-body"></tbody>
       </table>
       <h3>Total : <span id="cart-total">0 GNF</span></h3>
+      <hr />
+      <p>Créer un devis pour ce panier (sans encaissement, ne nécessite pas de session de caisse ouverte) :</p>
+      <input type="text" id="quote-customer-name" placeholder="Nom du client (facultatif)" />
+      <input type="text" id="quote-customer-phone" placeholder="Téléphone du client (facultatif)" />
+      <br /><br />
+      <button id="create-quote" class="secondary">Créer un devis</button>
+      <div id="quote-result"></div>
     </div>
 
     <div class="card">
@@ -66,6 +73,47 @@
       <br /><br />
       <button id="validate-sale">Valider la vente</button>
       <div id="sale-result"></div>
+    </div>
+
+    <div class="card">
+      <h2>Convertir un devis en vente</h2>
+      <div id="quote-load-error" class="alert alert-error" style="display:none"></div>
+      <input type="text" id="quote-number-input" placeholder="Numéro du devis (ex: DEV-...)" />
+      <button id="load-quote" class="secondary">Charger le devis</button>
+
+      <div id="quote-details" style="display:none; margin-top:14px">
+        <p id="quote-info"></p>
+        <table>
+          <thead><tr><th>Produit</th><th>Qté</th><th>Prix unitaire</th><th>Total</th></tr></thead>
+          <tbody id="quote-items-body"></tbody>
+        </table>
+        <h3>Total devis : <span id="quote-total">0 GNF</span></h3>
+
+        <div id="quote-convert-form">
+          <label>Mode de paiement</label>
+          <select id="quote-payment-mode">
+            <option value="especes">Espèces</option>
+            <option value="mobile_money">Mobile Money</option>
+            <option value="soutra_money">Soutra Money</option>
+            <option value="credit_money">Crédit Money</option>
+            <option value="paycard">Paycard</option>
+            <option value="credit">Crédit (client fidèle)</option>
+          </select>
+          <br /><br />
+          <div id="quote-credit-fields" style="display:none">
+            <label>Date de remboursement prévue</label>
+            <input type="date" id="quote-credit-due-date" />
+          </div>
+          <label>Montant remis par le client (GNF)</label>
+          <input type="number" id="quote-amount-given" value="0" />
+          <br /><br />
+          <label>Email du client (facultatif)</label>
+          <input type="email" id="quote-customer-email" placeholder="client@exemple.com" />
+          <br /><br />
+          <button id="convert-quote">Convertir en vente</button>
+        </div>
+      </div>
+      <div id="quote-convert-result"></div>
     </div>
 
     <div class="card">

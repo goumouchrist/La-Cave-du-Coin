@@ -202,6 +202,47 @@ vérifiée avec le caissier"), puis clôture réellement la session (statut
 l'historique — rien n'est perdu, et l'écart initial reste consultable même
 après résolution.
 
+### 2.7 Créer un devis pour un client
+
+Un client qui veut connaître le prix avant d'acheter peut se voir remettre un
+**devis**, sans qu'il y ait d'encaissement ni de sortie de stock. Sur la page
+**"Caisse"**, en dessous du panier :
+
+1. Ajouter les produits souhaités au panier, comme pour une vente normale.
+2. Renseigner le **nom et le téléphone** du client (facultatif).
+3. Cliquer **"Créer un devis"**.
+4. Le devis reçoit un numéro unique (ex : `DEV-...`) et une date de validité
+   (**15 jours** par défaut). Cliquer **"Imprimer le devis"** pour le remettre
+   au client.
+
+**Contrairement à une vente, créer un devis ne nécessite pas de session de
+caisse ouverte** — possible même caisse fermée.
+
+**Le prix indiqué sur le devis est figé au moment de sa création** : si le
+client revient l'acheter plus tard et que le prix de vente a changé
+entre-temps, c'est le prix du devis (celui imprimé) qui sera appliqué à la
+conversion, pas le prix courant du produit.
+
+### 2.8 Convertir un devis en vente
+
+Quand le client revient pour acheter ce qui figure sur son devis, dans la
+section **"Convertir un devis en vente"** de la page Caisse :
+
+1. Saisir le **numéro du devis** (imprimé sur le document remis au client),
+   cliquer **"Charger le devis"**.
+2. Le détail s'affiche : articles, total, client, statut, date de validité.
+3. Choisir le **mode de paiement** et saisir le **montant remis**, comme pour
+   une vente normale.
+4. Cliquer **"Convertir en vente"**.
+
+**Cette étape nécessite une session de caisse ouverte**, contrairement à la
+création du devis : c'est une vraie vente qui décrémente le stock et encaisse
+le paiement, avec son propre reçu imprimable.
+
+Un devis ne peut être converti **qu'une seule fois**. Un devis dont la date de
+validité est dépassée ne peut plus être converti (le formulaire est désactivé
+au chargement) — il faut alors refaire un nouveau devis pour ce client.
+
 ---
 
 ## 3. Guide du Manager (en plus du Caissier)
@@ -411,6 +452,18 @@ L'écart entre le montant théorique et le montant physique compté dépasse
 cliquer **"Résoudre"** sur la ligne correspondante dans l'historique des
 sessions (menu "Sessions caisse"), en indiquant un commentaire expliquant
 l'écart.
+
+**"Le prix sur le devis imprimé n'est plus le même qu'en caisse."**
+C'est normal : le prix d'un devis est **figé** au moment où il est créé. Si le
+produit a changé de prix entre-temps, c'est le prix du devis (pas le prix
+courant) qui sera appliqué lors de la conversion en vente (voir
+[2.7](#27-créer-un-devis-pour-un-client)).
+
+**"Je n'arrive pas à convertir un devis en vente."**
+Deux causes possibles : aucune session de caisse n'est ouverte (contrairement
+à la création d'un devis, la conversion en nécessite une), ou le devis a
+dépassé sa date de validité (15 jours par défaut) — dans ce cas il faut
+refaire un nouveau devis (voir [2.8](#28-convertir-un-devis-en-vente)).
 
 **"Je veux supprimer un produit ou un fournisseur par erreur créé."**
 La "suppression" désactive l'élément sans effacer son historique (ventes,

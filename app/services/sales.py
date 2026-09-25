@@ -95,14 +95,15 @@ def create_sale(
         if available < qty:
             raise InsufficientStockError(f"Stock insuffisant pour '{product.name}' (disponible: {available}, demandé: {qty})")
 
-        line_total = product.prix_vente * qty
+        line_price = item.get("unit_price_override", product.prix_vente)
+        line_total = line_price * qty
         total += line_total
 
         sale_items.append(
             SaleItem(
                 product_id=product.id,
                 qty_units=qty,
-                unit_price=product.prix_vente,
+                unit_price=line_price,
                 quantity_confirmed=item.get("quantity_confirmed", False),
             )
         )

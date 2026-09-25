@@ -5,6 +5,8 @@ let currentSession = null;
 let avoirCustomer = null;
 let creditCustomer = null;
 let returnSale = null;
+let allProducts = [];
+let activeQuote = null;
 
 async function init() {
   requireAuth(["admin", "manager", "caissier"]);
@@ -27,6 +29,13 @@ async function init() {
 
   document.getElementById("amount-given").addEventListener("input", updateChange);
   document.getElementById("validate-sale").addEventListener("click", validateSale);
+  document.getElementById("create-quote").addEventListener("click", createQuote);
+  document.getElementById("load-quote").addEventListener("click", loadQuoteForConversion);
+  document.getElementById("convert-quote").addEventListener("click", convertQuote);
+  document.getElementById("quote-payment-mode").addEventListener("change", () => {
+    const mode = document.getElementById("quote-payment-mode").value;
+    document.getElementById("quote-credit-fields").style.display = mode === "credit" ? "block" : "none";
+  });
   document.getElementById("payment-mode").addEventListener("change", onPaymentModeChange);
   document.getElementById("avoir-lookup").addEventListener("click", lookupAvoirCustomer);
   document.getElementById("credit-lookup").addEventListener("click", lookupCreditCustomer);
@@ -99,6 +108,7 @@ async function lookupAvoirCustomer() {
 async function loadQuickProducts() {
   try {
     const products = await apiFetch("/api/products");
+    allProducts = products;
     const box = document.getElementById("quick-products");
     box.innerHTML = products
       .map(
@@ -271,6 +281,125 @@ async function validateSale() {
     document.getElementById("credit-found").textContent = "";
     creditCustomer = null;
     renderCart();
+  } catch (err) {
+    resultBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+async function createQuote() {
+  const resultBox = document.getElementById("quote-result");
+  resultBox.innerHTML = "";
+
+  if (cart.length === 0) {
+    resultBox.innerHTML = `<div class="alert alert-error">Le panier est vide.</div>`;
+    return;
+  }
+
+  const payload = {
+    items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty })),
+    customer_name: document.getElementById("quote-customer-name").value.trim() || null,
+    customer_phone: document.getElementById("quote-customer-phone").value.trim() || null,
+  };
+
+  try {
+    const quote = await apiFetch("/api/quotes", { method: "POST", body: JSON.stringify(payload) });
+    resultBox.innerHTML = `
+      <div class="alert alert-success">
+        Devis #${quote.quote_number} créé${quote.expires_at ? ` (valable jusqu'au ${quote.expires_at})` : ""}.
+        <br /><br />
+        <button class="secondary" onclick="openAuthenticatedPdf('/api/quotes/${quote.id}/pdf')">Imprimer le devis</button>
+      </div>
+    `;
+    cart = [];
+    document.getElementById("quote-customer-name").value = "";
+    document.getElementById("quote-customer-phone").value = "";
+    renderCart();
+  } catch (err) {
+    resultBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+async function loadQuoteForConversion() {
+  const errorBox = document.getElementById("quote-load-error");
+  const detailsBox = document.getElementById("quote-details");
+  const resultBox = document.getElementById("quote-convert-result");
+  errorBox.style.display = "none";
+  detailsBox.style.display = "none";
+  resultBox.innerHTML = "";
+  activeQuote = null;
+
+  const number = document.getElementById("quote-number-input").value.trim();
+  if (!number) return;
+
+  try {
+    activeQuote = await apiFetch(`/api/quotes/by-number/${encodeURIComponent(number)}`);
+  } catch (err) {
+    errorBox.textContent = err.message === "Not Found" ? "Aucun devis avec ce numéro" : err.message;
+    errorBox.style.display = "block";
+    return;
+  }
+
+  const productName = (productId) => {
+    const p = allProducts.find((x) => x.id === productId);
+    return p ? p.name : `Produit #${productId}`;
+  };
+
+  const body = document.getElementById("quote-items-body");
+  body.innerHTML = activeQuote.items
+    .map((item) => {
+      const lineTotal = item.qty_units * item.unit_price;
+      return `<tr><td>${productName(item.product_id)}</td><td>${item.qty_units}</td><td>${formatGNF(item.unit_price)}</td><td>${formatGNF(lineTotal)}</td></tr>`;
+    })
+    .join("");
+  document.getElementById("quote-total").textContent = formatGNF(activeQuote.total_amount);
+
+  const clientLine = activeQuote.customer_name ? ` — Client : ${activeQuote.customer_name}${activeQuote.customer_phone ? " (" + activeQuote.customer_phone + ")" : ""}` : "";
+  const expiryLine = activeQuote.expires_at ? ` — Valable jusqu'au ${activeQuote.expires_at}` : "";
+  document.getElementById("quote-info").textContent = `Statut : ${activeQuote.status}${clientLine}${expiryLine}`;
+
+  const convertForm = document.getElementById("quote-convert-form");
+  if (activeQuote.status !== "en_cours") {
+    convertForm.style.display = "none";
+    errorBox.textContent = `Ce devis n'est plus convertible (statut : ${activeQuote.status}).`;
+    errorBox.style.display = "block";
+  } else {
+    convertForm.style.display = "block";
+  }
+
+  detailsBox.style.display = "block";
+}
+
+async function convertQuote() {
+  const resultBox = document.getElementById("quote-convert-result");
+  resultBox.innerHTML = "";
+
+  if (!activeQuote) return;
+
+  if (!currentSession) {
+    resultBox.innerHTML = `<div class="alert alert-error">Aucune session de caisse ouverte : impossible de convertir un devis en vente.</div>`;
+    return;
+  }
+
+  const payload = {
+    cash_session_id: currentSession.id,
+    payment_mode: document.getElementById("quote-payment-mode").value,
+    amount_given: parseInt(document.getElementById("quote-amount-given").value || "0", 10),
+    customer_email: document.getElementById("quote-customer-email").value.trim() || null,
+    due_date: document.getElementById("quote-payment-mode").value === "credit" ? document.getElementById("quote-credit-due-date").value || null : null,
+  };
+
+  try {
+    const sale = await apiFetch(`/api/quotes/${activeQuote.id}/convert`, { method: "POST", body: JSON.stringify(payload) });
+    resultBox.innerHTML = `
+      <div class="alert alert-success">
+        Devis converti en vente #${sale.transaction_number}. Monnaie à rendre : ${formatGNF(sale.change_amount)}.
+        <br /><br />
+        <button class="secondary" onclick="openAuthenticatedPdf('/api/sales/${sale.id}/receipt.pdf')">Imprimer le reçu</button>
+      </div>
+    `;
+    document.getElementById("quote-details").style.display = "none";
+    document.getElementById("quote-number-input").value = "";
+    activeQuote = null;
   } catch (err) {
     resultBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
   }

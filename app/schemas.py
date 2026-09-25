@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
-from app.models import CashSessionStatus, MovementStatus, MovementType, PaymentMode, Role, SaleStatus
+from app.models import CashSessionStatus, MovementStatus, MovementType, PaymentMode, QuoteStatus, Role, SaleStatus
 
 
 # ---------- Auth / Users ----------
@@ -261,6 +261,63 @@ class SaleEmailRequest(BaseModel):
 
 class SaleCancel(BaseModel):
     reason: str
+
+
+# ---------- Devis (Quotes) ----------
+
+class QuoteItemIn(BaseModel):
+    product_id: int
+    qty: int = Field(gt=0)
+
+
+class QuoteCreate(BaseModel):
+    items: list[QuoteItemIn]
+    customer_id: int | None = Field(default=None, description="Client déjà connu (facultatif)")
+    customer_name: str | None = Field(default=None, description="Nom du client (facultatif, si customer_id non fourni)")
+    customer_phone: str | None = None
+    validity_days: int | None = Field(default=None, description="Nombre de jours de validité (par défaut: QUOTE_VALIDITY_DAYS)")
+
+
+class QuoteItemOut(BaseModel):
+    id: int
+    product_id: int
+    qty_units: int
+    unit_price: int
+
+    class Config:
+        from_attributes = True
+
+
+class QuoteOut(BaseModel):
+    id: int
+    quote_number: str
+    created_by: int
+    customer_id: int | None
+    customer_name: str | None
+    customer_phone: str | None
+    total_amount: int
+    status: QuoteStatus
+    expires_at: date | None
+    converted_sale_id: int | None
+    converted_at: datetime | None
+    print_count: int
+    created_at: datetime
+    items: list[QuoteItemOut]
+
+    class Config:
+        from_attributes = True
+
+
+class QuoteConvert(BaseModel):
+    cash_session_id: int
+    payment_mode: PaymentMode
+    amount_given: int = Field(ge=0)
+    customer_id: int | None = None
+    customer_name: str | None = None
+    customer_phone: str | None = None
+    customer_address: str | None = None
+    customer_email: str | None = None
+    due_date: date | None = None
 
 
 # ---------- Customers & retours ----------
