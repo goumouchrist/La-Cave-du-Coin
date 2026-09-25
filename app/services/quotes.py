@@ -26,6 +26,10 @@ class QuoteNumberGenerationError(Exception):
     pass
 
 
+class CustomerInfoRequiredError(Exception):
+    pass
+
+
 def _generate_unique_quote_number(db: Session) -> str:
     """Code court (ex: DEV-A7K9M) plutôt qu'horodaté : à taper/lire facilement
     au comptoir, ou à scanner directement via le QR code du devis imprimé."""
@@ -45,6 +49,12 @@ def create_quote(
     customer_phone: str | None = None,
     validity_days: int | None = None,
 ) -> Quote:
+    # Nom + téléphone obligatoires (sauf client déjà identifié par customer_id) :
+    # c'est ce qui permet de retrouver un devis plus tard si le client perd son
+    # numéro/QR (voir la recherche par client sur la page Caisse).
+    if customer_id is None and (not customer_name or not customer_name.strip() or not customer_phone or not customer_phone.strip()):
+        raise CustomerInfoRequiredError("Le nom et le téléphone du client sont obligatoires pour créer un devis")
+
     quote_items: list[QuoteItem] = []
     total = 0
 

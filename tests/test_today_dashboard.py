@@ -45,7 +45,11 @@ def test_today_summary_and_activity_reflect_todays_movements(client, auth_header
     )
     assert sale_res.status_code == 201, sale_res.text
 
-    quote_res = client.post("/api/quotes", json={"items": [{"product_id": product.id, "qty": 1}]}, headers=headers)
+    quote_res = client.post(
+        "/api/quotes",
+        json={"items": [{"product_id": product.id, "qty": 1}], "customer_name": "Client Test", "customer_phone": "600000000"},
+        headers=headers,
+    )
     assert quote_res.status_code == 201, quote_res.text
     quote_id = quote_res.json()["id"]
 

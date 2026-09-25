@@ -13,7 +13,11 @@ from app.services import sales as sales_service
 
 router = APIRouter(prefix="/api/quotes", tags=["quotes"])
 
-QUOTE_SERVICE_ERRORS = (quotes_service.ProductNotFoundError, quotes_service.QuantityConfirmationRequiredError)
+QUOTE_SERVICE_ERRORS = (
+    quotes_service.ProductNotFoundError,
+    quotes_service.QuantityConfirmationRequiredError,
+    quotes_service.CustomerInfoRequiredError,
+)
 
 CONVERT_SERVICE_ERRORS = (
     sales_service.CashSessionClosedError,

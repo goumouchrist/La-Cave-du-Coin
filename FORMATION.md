@@ -209,7 +209,9 @@ Un client qui veut connaître le prix avant d'acheter peut se voir remettre un
 **"Caisse"**, en dessous du panier :
 
 1. Ajouter les produits souhaités au panier, comme pour une vente normale.
-2. Renseigner le **nom et le téléphone** du client (facultatif).
+2. Renseigner le **nom et le téléphone** du client — **obligatoires** (c'est ce
+   qui permet de retrouver le devis plus tard si le client perd son numéro,
+   voir la recherche par client dans [2.8](#28-convertir-un-devis-en-vente)).
 3. Cliquer **"Créer un devis"**.
 4. Le devis reçoit un numéro unique (ex : `DEV-...`) et une date de validité
    (**15 jours** par défaut). Cliquer **"Imprimer le devis"** pour le remettre
@@ -260,6 +262,12 @@ le paiement, avec son propre reçu imprimable.
 Un devis ne peut être converti **qu'une seule fois**. Un devis dont la date de
 validité est dépassée ne peut plus être converti (le formulaire est désactivé
 au chargement) — il faut alors refaire un nouveau devis pour ce client.
+
+**Client sans son numéro de devis ?** Juste en dessous du champ numéro, un
+champ **"Nom ou téléphone du client"** permet de retrouver ses devis en cours
+sans connaître le numéro — cliquer "Rechercher", puis "Charger" sur la ligne
+correspondante. C'est justement pour que cette recherche fonctionne que le nom
+et le téléphone sont obligatoires à la création du devis.
 
 ---
 

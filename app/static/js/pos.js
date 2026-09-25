@@ -311,10 +311,17 @@ async function createQuote() {
     return;
   }
 
+  const customerName = document.getElementById("quote-customer-name").value.trim();
+  const customerPhone = document.getElementById("quote-customer-phone").value.trim();
+  if (!customerName || !customerPhone) {
+    resultBox.innerHTML = `<div class="alert alert-error">Le nom et le téléphone du client sont obligatoires (pour pouvoir retrouver le devis plus tard).</div>`;
+    return;
+  }
+
   const payload = {
     items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, quantity_confirmed: l.quantity_confirmed })),
-    customer_name: document.getElementById("quote-customer-name").value.trim() || null,
-    customer_phone: document.getElementById("quote-customer-phone").value.trim() || null,
+    customer_name: customerName,
+    customer_phone: customerPhone,
   };
 
   try {

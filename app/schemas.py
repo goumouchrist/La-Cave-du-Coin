@@ -277,8 +277,12 @@ class QuoteItemIn(BaseModel):
 class QuoteCreate(BaseModel):
     items: list[QuoteItemIn]
     customer_id: int | None = Field(default=None, description="Client déjà connu (facultatif)")
-    customer_name: str | None = Field(default=None, description="Nom du client (facultatif, si customer_id non fourni)")
-    customer_phone: str | None = None
+    customer_name: str | None = Field(
+        default=None, description="Nom du client — obligatoire si customer_id non fourni (pour pouvoir retrouver le devis plus tard)"
+    )
+    customer_phone: str | None = Field(
+        default=None, description="Téléphone du client — obligatoire si customer_id non fourni (pour pouvoir retrouver le devis plus tard)"
+    )
     validity_days: int | None = Field(default=None, description="Nombre de jours de validité (par défaut: QUOTE_VALIDITY_DAYS)")
 
 
