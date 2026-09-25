@@ -53,6 +53,12 @@ Monnaie : **Franc Guinéen (GNF)**.
   Un ajustement d'inventaire accepte une quantité **négative** (manque
   constaté) ou positive (surplus) — tous les autres types de mouvement
   restent strictement positifs.
+- **Péremption par lot (FEFO)** : chaque entrée de stock peut porter sa propre
+  date de péremption (plusieurs lots d'un même produit peuvent coexister avec
+  des dates différentes). La quantité restante par lot est **dérivée**, jamais
+  stockée, en répartissant la consommation totale sur les lots du plus proche
+  de la péremption au plus lointain. Alertes automatiques (délai configurable,
+  7 jours par défaut) sur le tableau de bord.
 - **Devis** : créer un devis (prix figé, sans encaissement ni sortie de
   stock, ne nécessite pas de session de caisse ouverte), l'imprimer en PDF,
   puis le convertir en une vraie vente en un clic (réutilise le prix figé,
@@ -163,7 +169,7 @@ Créés par `scripts/seed_data.py` :
 ./.venv/Scripts/python.exe -m pytest -q
 ```
 
-149 tests couvrant : permissions par rôle, conversions d'unités
+161 tests couvrant : permissions par rôle, conversions d'unités
 (carton/pack/unité), ouverture/fermeture de caisse et blocage sur écart,
 création de vente (stock, monnaie, règle des >5 articles identiques),
 règles anti-fraude (annulation, prix minimum, duplicata, double validation
@@ -171,8 +177,9 @@ stock, double scan), le module de prédiction (top ventes, prévision de
 rupture, régression linéaire de CA), les retours/avoir/crédit client, les
 imports CSV (produits, mouvements), les sauvegardes, les emails, **les
 devis** (création sans session, prix figé, conversion, expiration), **le
-tableau de bord "Aujourd'hui"**, et **la fiche d'inventaire à l'aveugle**.
-Base de données SQLite en mémoire, aucune dépendance externe requise.
+tableau de bord "Aujourd'hui"**, **la fiche d'inventaire à l'aveugle**, et
+**le suivi de péremption par lot (FEFO)**. Base de données SQLite en
+mémoire, aucune dépendance externe requise.
 
 ## Utilisation
 

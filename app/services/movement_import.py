@@ -1,6 +1,7 @@
 import csv
 import io
 from dataclasses import dataclass, field
+from datetime import date
 
 from sqlalchemy.orm import Session
 
@@ -13,9 +14,9 @@ REQUIRED_COLUMNS = {"barcode", "type", "qty"}
 ALLOWED_TYPES = {"entree", "casse", "don", "ajustement"}
 
 CSV_TEMPLATE = (
-    "barcode,type,qty,unit,invoice_number,reason,supplier\n"
-    "6001234500017,entree,5,carton,F-2026-001,,Brasserie de Guinée\n"
-    "6001234500024,casse,2,unite,,Bouteilles cassées à la livraison,\n"
+    "barcode,type,qty,unit,invoice_number,expiry_date,reason,supplier\n"
+    "6001234500017,entree,5,carton,F-2026-001,2026-12-31,,Brasserie de Guinée\n"
+    "6001234500024,casse,2,unite,,,Bouteilles cassées à la livraison,\n"
 )
 
 
@@ -45,12 +46,21 @@ def _parse_row(row: dict) -> dict:
     if unit not in ("unite", "carton", "pack"):
         raise ValueError(f"unité invalide {unit!r} — doit être unite, carton ou pack")
 
+    expiry_date_raw = (row.get("expiry_date") or "").strip()
+    expiry_date = None
+    if expiry_date_raw:
+        try:
+            expiry_date = date.fromisoformat(expiry_date_raw)
+        except ValueError:
+            raise ValueError(f"date de péremption invalide {expiry_date_raw!r} — format attendu AAAA-MM-JJ")
+
     return {
         "barcode": row["barcode"].strip(),
         "type": MovementType(movement_type),
         "qty": qty,
         "unit": unit,
         "invoice_number": (row.get("invoice_number") or "").strip() or None,
+        "expiry_date": expiry_date,
         "reason": (row.get("reason") or "").strip() or None,
         "supplier_name": (row.get("supplier") or "").strip() or None,
     }
@@ -79,6 +89,7 @@ def import_movements_from_csv(db: Session, csv_text: str, created_by: int) -> Im
                 data["unit"],
                 created_by=created_by,
                 invoice_number=data["invoice_number"],
+                expiry_date=data["expiry_date"],
                 reason=data["reason"],
                 supplier_id=supplier_id,
             )

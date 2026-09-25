@@ -337,7 +337,9 @@ Toujours dans "Stock" :
   fichier CSV (télécharger le modèle avec le bouton dédié pour avoir le bon
   format de colonnes).
 - **Import de mouvements de stock** : idem pour des mouvements (chaque ligne
-  importée reste en attente de validation, comme une saisie manuelle).
+  importée reste en attente de validation, comme une saisie manuelle). Le
+  modèle inclut une colonne `expiry_date` (format `AAAA-MM-JJ`, facultative)
+  pour renseigner la date de péremption d'un lot dès l'import.
 
 ### 3.5 Modifier le taux de TVA d'un produit
 

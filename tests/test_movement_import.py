@@ -77,6 +77,29 @@ def test_import_reports_zero_or_negative_quantity(db_session):
     assert "supérieure à 0" in result.errors[0]["error"]
 
 
+def test_import_parses_expiry_date(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    make_product(db_session)
+
+    csv_text = "barcode,type,qty,unit,invoice_number,expiry_date,reason,supplier\n1111111111111,entree,5,carton,,2026-12-31,,\n"
+    result = import_movements_from_csv(db_session, csv_text, created_by=admin.id)
+
+    assert result.errors == []
+    movement = db_session.query(StockMovement).first()
+    assert str(movement.expiry_date) == "2026-12-31"
+
+
+def test_import_reports_invalid_expiry_date_format(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    make_product(db_session)
+
+    csv_text = "barcode,type,qty,expiry_date\n1111111111111,entree,5,31/12/2026\n"
+    result = import_movements_from_csv(db_session, csv_text, created_by=admin.id)
+
+    assert result.created == []
+    assert "péremption" in result.errors[0]["error"]
+
+
 def test_import_defaults_unit_to_unite(db_session):
     admin = create_user(db_session, "admin", "pw", Role.ADMIN)
     make_product(db_session)

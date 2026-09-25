@@ -55,6 +55,7 @@ erDiagram
         enum type
         int qty_units
         string invoice_number
+        date expiry_date
         text reason
         enum status
         int created_by FK
@@ -229,6 +230,11 @@ erDiagram
   valeurs possibles.
 - **Stock courant d'un produit** : non stocké directement, **dérivé** des
   `stock_movements` validés (`app/services/products.py::get_current_stock_units`).
+- **`stock_movements.expiry_date`** : pertinent uniquement pour un mouvement
+  de type `ENTREE` (un "lot"). La quantité **restante** par lot n'est pas
+  stockée non plus — dérivée en répartissant la consommation totale sur les
+  lots par ordre de péremption croissante, méthode FEFO
+  (`app/services/products.py::get_batches_remaining`).
 - **`quotes.converted_sale_id`** : lien optionnel devis → vente. C'est
   volontairement le devis qui référence la vente (et non l'inverse), pour que
   `sales`/`sale_items` restent inchangés par la fonctionnalité devis.
