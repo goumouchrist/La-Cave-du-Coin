@@ -76,6 +76,20 @@ def test_today_summary_and_activity_reflect_todays_movements(client, auth_header
     for expected in ["cash_session_opened", "sale_created", "quote_created", "quote_converted", "cash_session_blocked"]:
         assert expected in actions
 
+    products_res = client.get("/api/stats/today-products", headers=headers)
+    assert products_res.status_code == 200, products_res.text
+    products = products_res.json()
+    assert len(products) == 1
+    assert products[0]["name"] == product.name
+    assert products[0]["qty_sold"] == 2  # la vente directe + la conversion du devis, 1 unité chacune
+
+
+def test_today_products_empty_when_no_sales(client, auth_headers):
+    headers = auth_headers("manager", Role.MANAGER)
+    res = client.get("/api/stats/today-products", headers=headers)
+    assert res.status_code == 200
+    assert res.json() == []
+
 
 def test_today_activity_excludes_non_movement_actions(client, auth_headers, db_session):
     headers = auth_headers("manager", Role.MANAGER)

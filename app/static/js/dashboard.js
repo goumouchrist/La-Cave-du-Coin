@@ -1,4 +1,5 @@
 const GOLD_PALETTE = ["#c9a24b", "#8a6f3a", "#5a9a6f", "#c65a4a", "#5a7a9a", "#9a5a8f"];
+let todayProductsChart = null;
 
 async function init() {
   requireAuth(["admin", "manager"]);
@@ -13,16 +14,46 @@ async function init() {
   setInterval(loadToday, 15000);
 }
 
+function pulse(el) {
+  el.classList.remove("pulse");
+  void el.offsetWidth; // force le reflow pour pouvoir redéclencher l'animation CSS
+  el.classList.add("pulse");
+}
+
+function animateTileNumber(el, newValue, formatFn = (v) => String(v)) {
+  const oldValue = parseInt(el.dataset.rawValue || "0", 10);
+  el.dataset.rawValue = newValue;
+  if (oldValue === newValue) return;
+
+  const duration = 500;
+  const start = performance.now();
+  function step(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const current = Math.round(oldValue + (newValue - oldValue) * progress);
+    el.textContent = formatFn(current);
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+  pulse(el);
+}
+
 async function loadToday() {
   try {
     const summary = await apiFetch("/api/stats/today-summary");
-    document.getElementById("today-revenue").textContent = formatGNF(summary.revenue_gnf);
-    document.getElementById("today-sales-count").textContent = summary.sales_count;
-    document.getElementById("today-quotes-count").textContent = `${summary.quotes_created_count} / ${summary.quotes_converted_count}`;
-    document.getElementById("today-stock-count").textContent = summary.stock_movements_count;
-    const gapEl = document.getElementById("today-cash-gap-count");
-    gapEl.textContent = summary.cash_gap_alerts_count;
-    gapEl.style.color = summary.cash_gap_alerts_count > 0 ? "#c65a4a" : "";
+    animateTileNumber(document.getElementById("today-revenue"), summary.revenue_gnf, formatGNF);
+    animateTileNumber(document.getElementById("today-sales-count"), summary.sales_count);
+    animateTileNumber(document.getElementById("today-stock-count"), summary.stock_movements_count);
+
+    const quotesEl = document.getElementById("today-quotes-count");
+    const quotesText = `${summary.quotes_created_count} / ${summary.quotes_converted_count}`;
+    if (quotesEl.textContent !== quotesText) {
+      quotesEl.textContent = quotesText;
+      pulse(quotesEl);
+    }
+
+    const gapTile = document.getElementById("today-cash-gap-tile");
+    gapTile.dataset.accent = summary.cash_gap_alerts_count > 0 ? "danger" : "success";
+    animateTileNumber(document.getElementById("today-cash-gap-count"), summary.cash_gap_alerts_count);
 
     const activity = await apiFetch("/api/stats/today-activity");
     const body = document.getElementById("today-activity-body");
@@ -34,8 +65,39 @@ async function loadToday() {
           })
           .join("")
       : `<tr><td colspan="3">Aucune activité aujourd'hui pour le moment.</td></tr>`;
+
+    await loadTodayProducts();
   } catch (e) {
     // silencieux : un échec de rafraîchissement ne doit pas casser le reste du tableau de bord
+  }
+}
+
+async function loadTodayProducts() {
+  const data = await apiFetch("/api/stats/today-products");
+  const canvas = document.getElementById("today-products-chart");
+  const emptyMsg = document.getElementById("today-products-empty");
+
+  if (data.length === 0) {
+    canvas.style.display = "none";
+    emptyMsg.style.display = "block";
+    return;
+  }
+  canvas.style.display = "block";
+  emptyMsg.style.display = "none";
+
+  if (todayProductsChart) {
+    todayProductsChart.data.labels = data.map((d) => d.name);
+    todayProductsChart.data.datasets[0].data = data.map((d) => d.qty_sold);
+    todayProductsChart.update();
+  } else {
+    todayProductsChart = new Chart(canvas, {
+      type: "pie",
+      data: {
+        labels: data.map((d) => d.name),
+        datasets: [{ data: data.map((d) => d.qty_sold), backgroundColor: GOLD_PALETTE }],
+      },
+      options: { animation: { duration: 700, easing: "easeOutQuart" } },
+    });
   }
 }
 

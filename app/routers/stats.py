@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user, require_role
-from app.models import Log, Product, Quote, Role, Sale, SaleStatus, StockMovement, User
+from app.models import Log, Product, Quote, Role, Sale, SaleItem, SaleStatus, StockMovement, User
 from app.services import predictions as predictions_service
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
@@ -109,6 +109,21 @@ def today_summary(db: Session = Depends(get_db), _: User = Depends(require_role(
         "stock_movements_count": int(stock_movements_count or 0),
         "cash_gap_alerts_count": int(cash_gap_alerts_count or 0),
     }
+
+
+@router.get("/today-products")
+def today_products(db: Session = Depends(get_db), _: User = Depends(require_role(Role.ADMIN, Role.MANAGER))):
+    today = date.today()
+    rows = (
+        db.query(Product.name, func.sum(SaleItem.qty_units).label("qty_sold"))
+        .join(SaleItem, SaleItem.product_id == Product.id)
+        .join(Sale, Sale.id == SaleItem.sale_id)
+        .filter(Sale.status == SaleStatus.VALIDE, func.date(Sale.created_at) == today)
+        .group_by(Product.name)
+        .order_by(func.sum(SaleItem.qty_units).desc())
+        .all()
+    )
+    return [{"name": name, "qty_sold": int(qty_sold)} for name, qty_sold in rows]
 
 
 @router.get("/today-activity")

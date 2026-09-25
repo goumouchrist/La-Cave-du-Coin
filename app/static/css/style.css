@@ -135,6 +135,71 @@ main {
   color: var(--gold-light);
 }
 
+.today-tiles {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.today-tile {
+  flex: 1;
+  min-width: 150px;
+  text-align: center;
+  background: var(--panel-light);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--tile-accent, var(--gold));
+  border-radius: 10px;
+  padding: 14px 12px;
+  animation: today-tile-fade-in 0.5s ease-out backwards;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.today-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.today-tile:nth-child(1) { animation-delay: 0s; }
+.today-tile:nth-child(2) { animation-delay: 0.05s; }
+.today-tile:nth-child(3) { animation-delay: 0.1s; }
+.today-tile:nth-child(4) { animation-delay: 0.15s; }
+.today-tile:nth-child(5) { animation-delay: 0.2s; }
+
+.today-tile[data-accent="gold"]    { --tile-accent: var(--gold); }
+.today-tile[data-accent="success"] { --tile-accent: var(--success); }
+.today-tile[data-accent="danger"]  { --tile-accent: var(--danger); }
+.today-tile[data-accent="info"]    { --tile-accent: #5a7a9a; }
+.today-tile[data-accent="violet"]  { --tile-accent: #9a5a8f; }
+
+.today-tile-label {
+  font-size: 0.85em;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.today-tile-value {
+  font-size: 1.7em;
+  font-weight: bold;
+  color: var(--gold-light);
+  font-variant-numeric: proportional-nums;
+  display: inline-block;
+}
+
+.today-tile-value.pulse {
+  animation: today-tile-pulse 0.5s ease;
+}
+
+@keyframes today-tile-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes today-tile-pulse {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
 input, select, button {
   font-size: 1rem;
   padding: 8px 10px;
