@@ -22,6 +22,7 @@ Monnaie : **Franc Guinéen (GNF)**.
 - [Modèle de données](#modèle-de-données)
 - [API REST](#api-rest)
 - [Déploiement (MEP)](#déploiement-mep)
+  - [Mettre à jour pgAdmin (environnement staging)](#mettre-à-jour-pgadmin-environnement-staging)
 - [Migrations de schéma](#migrations-de-schéma)
 - [Limites connues](#limites-connues)
 
@@ -249,6 +250,29 @@ des patterns standards et éprouvés, mais **il faut valider ce déploiement sur
 une machine disposant de Docker (ou le serveur cible) avant une mise en
 production réelle**. Le lancement en local sans Docker (section
 Installation) a lui été entièrement testé et fonctionne.
+
+### Mettre à jour pgAdmin (environnement staging)
+
+pgAdmin (interface web pour interroger la base staging/prod, voir
+`docker-compose.staging.yml`) utilise l'image `dpage/pgadmin4:latest` — donc
+aucune modification de fichier n'est nécessaire pour le mettre à jour, il
+suffit de re-tirer l'image et de recréer le conteneur :
+
+```bash
+docker compose -p staging --env-file .env.staging -f docker-compose.yml -f docker-compose.staging.yml pull pgadmin
+docker compose -p staging --env-file .env.staging -f docker-compose.yml -f docker-compose.staging.yml up -d pgadmin
+```
+
+Le volume `pgadmin_data` (comptes, serveurs enregistrés) n'est pas touché —
+aucune perte de configuration. Vérifier la nouvelle version dans l'interface
+(bas de l'écran de connexion, ou menu **Help → About**).
+
+**Si ces commandes sont tapées depuis la console web Hetzner** (pas un vrai
+SSH) : cette console perd parfois des caractères sur les lignes longues
+collées (ex. un `-f` sans argument, ou un `:` qui devient un retour à la
+ligne). Le contournement fiable : taper chaque nom de fichier en partie puis
+compléter avec **Tab**, plutôt que de coller la ligne entière — ex. taper
+`docker-compose.s` puis Tab pour obtenir `docker-compose.staging.yml`.
 
 ## Migrations de schéma
 
