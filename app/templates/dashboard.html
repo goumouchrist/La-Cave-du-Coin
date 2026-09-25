@@ -11,6 +11,39 @@
 <body>
   <div id="navbar"></div>
   <main>
+    <div class="card">
+      <h2>Aujourd'hui</h2>
+      <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px">
+        <div class="card" style="flex:1; min-width:150px; text-align:center">
+          <div style="font-size:0.85em; opacity:0.8">CA du jour</div>
+          <div id="today-revenue" style="font-size:1.6em; font-weight:bold">—</div>
+        </div>
+        <div class="card" style="flex:1; min-width:150px; text-align:center">
+          <div style="font-size:0.85em; opacity:0.8">Ventes</div>
+          <div id="today-sales-count" style="font-size:1.6em; font-weight:bold">—</div>
+        </div>
+        <div class="card" style="flex:1; min-width:150px; text-align:center">
+          <div style="font-size:0.85em; opacity:0.8">Devis (créés / convertis)</div>
+          <div id="today-quotes-count" style="font-size:1.6em; font-weight:bold">—</div>
+        </div>
+        <div class="card" style="flex:1; min-width:150px; text-align:center">
+          <div style="font-size:0.85em; opacity:0.8">Mouvements de stock</div>
+          <div id="today-stock-count" style="font-size:1.6em; font-weight:bold">—</div>
+        </div>
+        <div class="card" style="flex:1; min-width:150px; text-align:center">
+          <div style="font-size:0.85em; opacity:0.8">Écarts de caisse</div>
+          <div id="today-cash-gap-count" style="font-size:1.6em; font-weight:bold">—</div>
+        </div>
+      </div>
+
+      <h3>Flux d'activité (aujourd'hui)</h3>
+      <table>
+        <thead><tr><th>Heure</th><th>Utilisateur</th><th>Événement</th></tr></thead>
+        <tbody id="today-activity-body"></tbody>
+      </table>
+      <p style="font-size:0.8em; opacity:0.7">Actualisation automatique toutes les 15 secondes.</p>
+    </div>
+
     <div class="grid-2">
       <div class="card">
         <h2>Top 5 des ventes (7 derniers jours)</h2>

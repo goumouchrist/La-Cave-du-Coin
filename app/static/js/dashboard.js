@@ -8,6 +8,35 @@ async function init() {
   await loadCategorySales();
   await loadCashierSales();
   await loadForecasts();
+
+  await loadToday();
+  setInterval(loadToday, 15000);
+}
+
+async function loadToday() {
+  try {
+    const summary = await apiFetch("/api/stats/today-summary");
+    document.getElementById("today-revenue").textContent = formatGNF(summary.revenue_gnf);
+    document.getElementById("today-sales-count").textContent = summary.sales_count;
+    document.getElementById("today-quotes-count").textContent = `${summary.quotes_created_count} / ${summary.quotes_converted_count}`;
+    document.getElementById("today-stock-count").textContent = summary.stock_movements_count;
+    const gapEl = document.getElementById("today-cash-gap-count");
+    gapEl.textContent = summary.cash_gap_alerts_count;
+    gapEl.style.color = summary.cash_gap_alerts_count > 0 ? "#c65a4a" : "";
+
+    const activity = await apiFetch("/api/stats/today-activity");
+    const body = document.getElementById("today-activity-body");
+    body.innerHTML = activity.length
+      ? activity
+          .map((item) => {
+            const time = new Date(item.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            return `<tr><td>${time}</td><td>${item.actor}</td><td>${item.label}</td></tr>`;
+          })
+          .join("")
+      : `<tr><td colspan="3">Aucune activité aujourd'hui pour le moment.</td></tr>`;
+  } catch (e) {
+    // silencieux : un échec de rafraîchissement ne doit pas casser le reste du tableau de bord
+  }
 }
 
 async function loadTopProducts() {
