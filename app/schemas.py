@@ -268,6 +268,7 @@ class SaleCancel(BaseModel):
 class QuoteItemIn(BaseModel):
     product_id: int
     qty: int = Field(gt=0)
+    quantity_confirmed: bool = False
 
 
 class QuoteCreate(BaseModel):

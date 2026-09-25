@@ -296,7 +296,7 @@ async function createQuote() {
   }
 
   const payload = {
-    items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty })),
+    items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, quantity_confirmed: l.quantity_confirmed })),
     customer_name: document.getElementById("quote-customer-name").value.trim() || null,
     customer_phone: document.getElementById("quote-customer-phone").value.trim() || null,
   };

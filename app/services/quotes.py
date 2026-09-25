@@ -16,6 +16,10 @@ class QuoteNotConvertibleError(Exception):
     pass
 
 
+class QuantityConfirmationRequiredError(Exception):
+    pass
+
+
 def create_quote(
     db: Session,
     creator: User,
@@ -34,6 +38,13 @@ def create_quote(
             raise ProductNotFoundError(f"Produit inconnu (id={item['product_id']})")
 
         qty = item["qty"]
+
+        if qty > settings.IDENTICAL_ITEMS_CONFIRM_THRESHOLD and not item.get("quantity_confirmed"):
+            raise QuantityConfirmationRequiredError(
+                f"Devis de {qty} x '{product.name}' (> {settings.IDENTICAL_ITEMS_CONFIRM_THRESHOLD}) : "
+                "confirmation de quantité requise (double scan / bouton confirmer)."
+            )
+
         line_total = product.prix_vente * qty
         total += line_total
 
@@ -91,6 +102,9 @@ def convert_to_sale(
             db.commit()
         raise QuoteNotConvertibleError(f"Ce devis n'est plus convertible (statut: {effective.value})")
 
+    # quantity_confirmed=True est sûr ici : create_quote a déjà appliqué le
+    # seuil de confirmation anti-fraude (IDENTICAL_ITEMS_CONFIRM_THRESHOLD) au
+    # moment de la création du devis, pas besoin de le revérifier.
     items = [
         {
             "product_id": qi.product_id,

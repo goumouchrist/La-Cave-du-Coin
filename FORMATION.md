@@ -223,6 +223,24 @@ client revient l'acheter plus tard et que le prix de vente a changé
 entre-temps, c'est le prix du devis (celui imprimé) qui sera appliqué à la
 conversion, pas le prix courant du produit.
 
+**La confirmation anti-fraude au-delà de 5 articles identiques (voir
+[section 6](#6-règles-anti-fraude-à-connaître)) s'applique aussi à la création
+d'un devis**, exactement comme pour une vente normale.
+
+> **Cas d'usage fréquent : un client n'a pas de cash sur lui et doit aller
+> retirer de l'argent, pendant qu'il y a la file d'attente.** C'est le bon
+> réflexe d'utiliser le devis dans ce cas, même s'il ne s'agit pas d'une
+> simple demande de prix : créer le devis pour son panier, lui remettre le
+> numéro imprimé comme "ticket de rappel", et continuer à servir les clients
+> suivants. Quand il revient, on charge son devis (section
+> [2.8](#28-convertir-un-devis-en-vente)) pour finaliser la vente.
+>
+> ⚠️ **Règle à respecter absolument dans ce cas : ne jamais remettre la
+> marchandise au client avant l'encaissement réel (la conversion du devis en
+> vente).** Le devis n'est qu'une promesse de prix, pas une preuve de
+> paiement — les articles restent derrière le comptoir jusqu'à ce que la vente
+> soit validée à son retour.
+
 ### 2.8 Convertir un devis en vente
 
 Quand le client revient pour acheter ce qui figure sur son devis, dans la
@@ -405,7 +423,7 @@ parfois une action :
 |---|---|
 | Annulation d'un ticket par un Caissier | possible seulement dans les 5 minutes suivant la vente, motif obligatoire |
 | Annulation d'un ticket par un Manager/Admin | possible à tout moment |
-| Vente de plusieurs articles identiques | confirmation manuelle requise au-delà de **5** unités du même produit dans le panier |
+| Vente de plusieurs articles identiques | confirmation manuelle requise au-delà de **5** unités du même produit dans le panier (s'applique aussi à la création d'un devis) |
 | Double scan du même produit | alerte si moins de **2 secondes** entre les deux scans |
 | Écart de caisse à la fermeture | session bloquée si l'écart dépasse **10 000 GNF**, nécessite une validation Manager |
 | Mouvement de stock hors vente | doit être validé par une **personne différente** de celle qui l'a saisi |

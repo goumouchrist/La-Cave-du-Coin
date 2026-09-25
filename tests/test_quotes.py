@@ -48,6 +48,27 @@ def test_create_quote_without_cash_session_succeeds(db_session):
     assert quote.expires_at == date.today() + timedelta(days=15)
 
 
+def test_create_quote_more_than_five_identical_items_requires_confirmation(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager)
+
+    with pytest.raises(quotes_service.QuantityConfirmationRequiredError):
+        quotes_service.create_quote(db_session, cashier, items=[{"product_id": product.id, "qty": 6}])
+
+    quote = quotes_service.create_quote(
+        db_session, cashier, items=[{"product_id": product.id, "qty": 6, "quantity_confirmed": True}],
+    )
+    assert quote.total_amount == 6 * product.prix_vente
+
+    # La confirmation faite à la création du devis suffit : la conversion ne
+    # doit pas re-bloquer sur le même seuil anti-fraude.
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+    sale = quotes_service.convert_to_sale(db_session, quote, cashier, session_.id, PaymentMode.ESPECES, amount_given=100000)
+    assert sale.total_amount == 6 * product.prix_vente
+
+
 def test_create_quote_unknown_product_raises(db_session):
     cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
 
