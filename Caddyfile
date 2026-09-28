@@ -1,5 +1,11 @@
 {$PUBLIC_DOMAIN} {
-	reverse_proxy app:8000
+	# On cible le nom de conteneur exact (la_cave_du_coin-app-1), pas l'alias
+	# de service "app" : Docker enregistre automatiquement le nom du service
+	# comme alias sur CHAQUE reseau qu'il rejoint, y compris caddy-net - ou le
+	# service "app" de staging (alias "stagingapp") repond donc AUSSI a "app".
+	# Caddy etant sur les deux reseaux (celui de prod + caddy-net), "app"
+	# devenait ambigu et resolvait vers staging au lieu de prod.
+	reverse_proxy la_cave_du_coin-app-1:8000
 }
 
 # Environnement de test ISO prod (staging) : voir DEPLOYMENT.md.
