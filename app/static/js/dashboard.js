@@ -150,7 +150,7 @@ async function loadForecasts() {
     .sort((a, b) => a.days_remaining - b.days_remaining)
     .map(
       (s) => `
-      <tr style="${s.alert ? "color:#ff9a8a" : ""}">
+      <tr style="${s.alert ? "color:var(--danger)" : ""}">
         <td>${s.name}</td>
         <td>${s.avg_daily_consumption}</td>
         <td>${s.days_remaining} ${s.alert ? "⚠️ Risque de rupture" : ""}</td>
@@ -164,7 +164,7 @@ async function loadForecasts() {
     .sort((a, b) => a.days_left - b.days_left)
     .map(
       (e) => `
-      <tr style="${e.days_left <= 3 ? "color:#ff9a8a" : ""}">
+      <tr style="${e.days_left <= 3 ? "color:var(--danger)" : ""}">
         <td>${e.name}</td>
         <td>${e.remaining_units}</td>
         <td>${e.expiry_date}</td>

@@ -182,7 +182,7 @@ function renderCart() {
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${line.name}${needsConfirm ? ' <span style="color:#c65a4a">(confirmation requise)</span>' : ""}</td>
+      <td>${line.name}${needsConfirm ? ' <span style="color:var(--danger)">(confirmation requise)</span>' : ""}</td>
       <td>
         <button class="secondary" onclick="changeQty(${idx}, -1)">-</button>
         ${line.qty}
