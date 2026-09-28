@@ -7,3 +7,9 @@
 {$PGADMIN_DOMAIN} {
 	reverse_proxy pgadmin:80
 }
+
+# Application de staging elle-même (pas juste sa base) : voir DEPLOYMENT.md.
+# N'a d'effet que si STAGING_DOMAIN est renseigné dans le .env de prod.
+{$STAGING_DOMAIN} {
+	reverse_proxy stagingapp:8000
+}

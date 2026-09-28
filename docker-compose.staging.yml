@@ -9,6 +9,16 @@ services:
   app:
     ports:
       - "127.0.0.1:8001:8000"
+    networks:
+      default:
+      # Rejoint le réseau partagé avec le stack prod pour être joignable
+      # depuis Caddy (cf. Caddyfile + STAGING_DOMAIN dans le .env de prod),
+      # sous un alias distinct de l'"app" de prod pour éviter toute collision
+      # de nom sur ce réseau partagé — même principe que "proddb" pour la
+      # base de données (voir docker-compose.yml).
+      caddy-net:
+        aliases:
+          - stagingapp
 
   # Interface web pour interroger la base staging depuis un navigateur (via
   # Caddy/HTTPS, cf. Caddyfile + PGADMIN_DOMAIN dans le .env de prod) plutôt

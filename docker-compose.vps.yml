@@ -14,6 +14,8 @@ services:
       # PGADMIN_DOMAIN n'est pas renseigné dans .env, ce bloc ne correspond
       # simplement à aucun trafic réel.
       PGADMIN_DOMAIN: ${PGADMIN_DOMAIN:-pgadmin.disabled.invalid}
+      # Même principe : inerte tant que STAGING_DOMAIN n'est pas renseigné.
+      STAGING_DOMAIN: ${STAGING_DOMAIN:-staging.disabled.invalid}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

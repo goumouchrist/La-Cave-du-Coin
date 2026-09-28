@@ -168,10 +168,13 @@ aucune action requise de votre part pour ce basculement.
 [VPS]
  ├─ stack "prod"     : app (port interne) + db (port interne) → Caddy → https://...
  └─ stack "staging"  : app (127.0.0.1:8001) + db (127.0.0.1:55432)
-                        accessibles uniquement via tunnel SSH depuis votre PC
+                        accessibles via tunnel SSH depuis votre PC,
+                        OU en HTTPS via Caddy (pgAdmin + appli elle-même,
+                        si STAGING_DOMAIN/PGADMIN_DOMAIN sont configurés)
 ```
 
-Les ports de staging sont liés à `127.0.0.1` sur le VPS : **jamais exposés sur
+Par défaut (sans configuration DNS/Caddy supplémentaire), les ports de
+staging sont liés à `127.0.0.1` sur le VPS : **jamais exposés sur
 internet**, même en cas d'oubli de configuration du pare-feu. Seul un tunnel
 SSH permet d'y accéder depuis votre PC.
 
@@ -281,6 +284,43 @@ ajouter un nouveau serveur PostgreSQL (clic droit sur "Servers" → "Register
 
 Une fois enregistré, la connexion est mémorisée par pgAdmin (dans son propre
 volume) — pas besoin de la ressaisir à chaque visite.
+
+### Alternative sans tunnel SSH : application de staging en HTTPS
+
+Même besoin que pour pgAdmin, mais pour l'**application elle-même** (se
+connecter, ouvrir une session de caisse, vendre, etc. — pas juste interroger
+la base en SQL) sans tunnel SSH.
+
+**Prérequis** : avoir déjà `caddy-net` créé (voir section pgAdmin ci-dessus).
+
+**Prérequis DNS** — chez votre registrar/DNS, ajouter un enregistrement `A`
+pour un second sous-domaine, ex. `staging.lacaveducoin.com`, pointant vers
+l'IP du VPS (le même principe que pour `pgadmin.lacaveducoin.com`).
+
+Dans le `.env` de **production** (pas `.env.staging`), ajouter la ligne :
+```
+STAGING_DOMAIN=staging.lacaveducoin.com
+```
+
+Puis relancer les deux stacks pour prendre en compte le changement :
+```bash
+./scripts/refresh_staging_from_prod.sh
+docker compose up -d --build
+```
+
+**Point technique** — le conteneur applicatif de staging s'appelle `app`,
+exactement comme celui de prod. Pour éviter toute collision de nom sur le
+réseau partagé `caddy-net`, il le rejoint sous un **alias dédié**
+(`stagingapp`, voir `docker-compose.staging.yml`) plutôt que son nom réel —
+même principe que `proddb` pour la base de données de prod (voir plus haut).
+Rien à faire de votre part pour ça, c'est déjà configuré dans le dépôt.
+
+**Résultat** : `https://staging.lacaveducoin.com` ouvre la page de connexion
+de l'application, identique à la vraie prod (mêmes rôles, mêmes
+fonctionnalités), mais branchée sur la base de staging — toute action là-bas
+(vente test, ouverture de caisse...) n'a aucun impact sur les vraies données.
+Les identifiants sont ceux copiés depuis la prod au dernier rafraîchissement
+mensuel (ou les comptes de démo si la prod était vide à ce moment-là).
 
 ### ⚠️ Point d'attention
 
