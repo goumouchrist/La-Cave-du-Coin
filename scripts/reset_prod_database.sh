@@ -23,9 +23,9 @@ log "sauvegarde ecrite : $PROJECT_DIR/$BACKUP_FILE"
 log "reconstruction de l'image app (pour etre sur d'utiliser le code juste recupere par git pull)"
 docker compose up -d --build
 
-log "vidage des tables (schema conserve, comptes/produits/ventes/stock/clients effaces)"
+log "vidage des tables (schema conserve, comptes/produits/ventes/devis/stock/clients effaces)"
 docker compose exec -T db psql -U cave_du_coin -d cave_du_coin -c \
-  "TRUNCATE TABLE users, suppliers, products, stock_movements, cash_sessions, sales, sale_items, logs, scan_logs, customers, customer_repayments, returns, return_items RESTART IDENTITY CASCADE;"
+  "TRUNCATE TABLE users, suppliers, products, stock_movements, cash_sessions, sales, sale_items, quotes, quote_items, logs, scan_logs, customers, customer_repayments, returns, return_items RESTART IDENTITY CASCADE;"
 
 log "recreation des comptes par defaut (mots de passe a changer immediatement)"
 docker compose exec -T app python scripts/seed_data.py --users-only
