@@ -1,14 +1,14 @@
 :root {
-  --bg: #f7f4ec;
-  --panel: #ffffff;
-  --panel-light: #f2ecdb;
-  --gold: #a97c1f;
-  --gold-light: #7a5a12;
-  --text: #2a2019;
-  --text-dim: #6b5f4f;
-  --danger: #a83a26;
-  --success: #276b40;
-  --border: #ddd0b8;
+  --bg: #22262b;
+  --panel: #2b3036;
+  --panel-light: #343a41;
+  --gold: #c9a24b;
+  --gold-light: #e8cf8a;
+  --text: #eceef0;
+  --text-dim: #a8adb3;
+  --danger: #c65a4a;
+  --success: #5a9a6f;
+  --border: #3d4349;
 }
 
 * {
@@ -44,7 +44,7 @@ body {
 
 .nav-brand span,
 .brand-title {
-  background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 25%, #4a3610 50%, var(--gold-light) 75%, var(--gold) 100%);
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 25%, #fff3d0 50%, var(--gold-light) 75%, var(--gold) 100%);
   background-size: 200% auto;
   background-clip: text;
   -webkit-background-clip: text;
@@ -103,7 +103,7 @@ body {
 
 .nav-link.active {
   background: var(--gold);
-  color: var(--text);
+  color: var(--bg);
   font-weight: bold;
 }
 
@@ -166,16 +166,16 @@ main {
 .today-tile:nth-child(5) { animation-delay: 0.2s; }
 .today-tile:nth-child(6) { animation-delay: 0.25s; }
 
-/* --tile-accent-text : version assombrie de l'accent, pour porter la couleur
-   sur le chiffre lui-même tout en restant lisible sur le fond clair (même
+/* --tile-accent-text : version eclaircie de l'accent, pour porter la couleur
+   sur le chiffre lui-même tout en restant lisible sur le fond sombre (même
    principe que .alert-success/.alert-error : le ton saturé reste réservé à la
-   bordure/l'accent, un ton sombre porte le texte). */
+   bordure/l'accent, un ton clair porte le texte). */
 .today-tile[data-accent="gold"]    { --tile-accent: var(--gold);    --tile-accent-text: var(--gold-light); }
-.today-tile[data-accent="success"] { --tile-accent: var(--success); --tile-accent-text: #1f5c34; }
-.today-tile[data-accent="danger"]  { --tile-accent: var(--danger);  --tile-accent-text: #7a2418; }
-.today-tile[data-accent="info"]    { --tile-accent: #4a6a8a;        --tile-accent-text: #1f4e7a; }
-.today-tile[data-accent="violet"]  { --tile-accent: #8a4a7f;        --tile-accent-text: #6b2f63; }
-.today-tile[data-accent="teal"]    { --tile-accent: #2f8f78;        --tile-accent-text: #1f5c4d; }
+.today-tile[data-accent="success"] { --tile-accent: var(--success); --tile-accent-text: #b7e2c4; }
+.today-tile[data-accent="danger"]  { --tile-accent: var(--danger);  --tile-accent-text: #ffb3a3; }
+.today-tile[data-accent="info"]    { --tile-accent: #5a7a9a;        --tile-accent-text: #a9c9e8; }
+.today-tile[data-accent="violet"]  { --tile-accent: #9a5a8f;        --tile-accent-text: #ddb0d4; }
+.today-tile[data-accent="teal"]    { --tile-accent: #2f8f78;        --tile-accent-text: #a3ded1; }
 
 .today-tile-label {
   font-size: 0.85em;
@@ -217,7 +217,7 @@ input, select, button {
 
 button {
   background: var(--gold);
-  color: var(--text);
+  color: var(--bg);
   border: none;
   font-weight: bold;
   cursor: pointer;
@@ -260,15 +260,15 @@ th {
 }
 
 .alert-error {
-  background: rgba(168, 58, 38, 0.12);
+  background: rgba(198, 90, 74, 0.2);
   border: 1px solid var(--danger);
-  color: #7a2418;
+  color: #ffb3a3;
 }
 
 .alert-success {
-  background: rgba(39, 107, 64, 0.12);
+  background: rgba(90, 154, 111, 0.2);
   border: 1px solid var(--success);
-  color: #1f5c34;
+  color: #b7e2c4;
 }
 
 .login-page {
