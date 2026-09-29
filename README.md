@@ -50,7 +50,7 @@ Monnaie : **Franc Guinéen (GNF)**.
   plusieurs fois).
 - **TVA** — **décision actée** : non appliquée pour cette version (le champ
   `tva_rate` reste en base par produit pour une activation future si besoin).
-- **Stock** : catégories de boissons, unités Pièce/Carton/Pack avec
+- **Stock** : catégories de boissons, unités Pièce/Carton/Casier avec
   **conversion automatique** vers l'unité de base, mouvements
   entrée/sortie-vente/casse/don/ajustement, **workflow de double validation**
   (saisie + supervision) pour tout mouvement hors vente, alertes de seuil bas.
@@ -175,8 +175,8 @@ Créés par `scripts/seed_data.py` :
 ./.venv/Scripts/python.exe -m pytest -q
 ```
 
-161 tests couvrant : permissions par rôle, conversions d'unités
-(carton/pack/unité), ouverture/fermeture de caisse et blocage sur écart,
+168 tests couvrant : permissions par rôle, conversions d'unités
+(carton/casier/unité), ouverture/fermeture de caisse et blocage sur écart,
 création de vente (stock, monnaie, règle des >5 articles identiques),
 règles anti-fraude (annulation, prix minimum, duplicata, double validation
 stock, double scan), le module de prédiction (top ventes, prévision de

@@ -151,7 +151,7 @@ def build() -> None:
         "crédit, avoir, paycard...), calcul automatique de la monnaie, sessions de caisse (fond initial, écart "
         "théorique/physique, blocage automatique si écart &gt; seuil).",
         "<b>Stock</b> : mouvements (entrée, casse, don, ajustement) avec <b>double validation obligatoire</b> "
-        "par une personne différente de celle qui saisit, conversions carton/pack/unité automatiques, import "
+        "par une personne différente de celle qui saisit, conversions carton/casier/unité automatiques, import "
         "CSV en masse, alertes de rupture prévisionnelle. Un ajustement peut être négatif (manque constaté au "
         "comptage) — tous les autres mouvements restent strictement positifs.",
         "<b>Péremption par lot (FEFO)</b> : chaque entrée de stock peut porter sa propre date de péremption "

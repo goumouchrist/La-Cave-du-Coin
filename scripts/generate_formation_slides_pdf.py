@@ -214,7 +214,7 @@ def build() -> None:
     story += slide(
         "GUIDE DU MANAGER", "Gérer le stock",
         [
-            "Créer un produit : prix, catégorie, unités par carton/pack, seuil d'alerte",
+            "Créer un produit : prix, catégorie, unités par carton/casier, seuil d'alerte",
             "Enregistrer un mouvement : entrée, casse, don, ajustement",
             "Ajustement uniquement : quantité négative = manque constaté, positive = surplus",
         ],
@@ -253,7 +253,7 @@ def build() -> None:
             ["name", "Oui", "Nom du produit, affiché partout (caisse, reçus, stock)"],
             ["category", "Oui", "Catégorie libre, utilisée pour la ventilation des ventes par catégorie"],
             ["unit_carton_qty", "Non (24)", "Unités par carton — conversion automatique"],
-            ["unit_pack_qty", "Non (6)", "Unités par pack — conversion automatique"],
+            ["unit_pack_qty", "Non (6)", "Unités par casier — conversion automatique"],
             ["prix_achat", "Oui", "Prix d'achat unitaire (GNF)"],
             ["prix_vente", "Oui", "Prix de vente unitaire — doit rester ≥ prix d'achat − 5 % (anti-fraude)"],
             ["stock_min_cartons", "Non (5)", "Seuil d'alerte de rupture, en cartons"],

@@ -291,13 +291,13 @@ et le téléphone sont obligatoires à la création du devis.
 Menu **"Stock"** :
 
 - **Créer un produit** : désignation, catégorie, code-barres (si le fabricant
-  en fournit un), unités par carton/pack (pour la conversion automatique),
+  en fournit un), unités par carton/casier (pour la conversion automatique),
   prix d'achat, prix de vente, seuil d'alerte (en cartons), taux de TVA
   (facultatif, informatif uniquement — n'est pas ajouté au prix), fournisseur
   habituel.
 - **Enregistrer un mouvement de stock** : entrée (réception fournisseur),
   casse, don, ou ajustement d'inventaire. Choisir le produit, la quantité (en
-  unité, carton ou pack — la conversion est automatique), et pour une entrée,
+  unité, carton ou casier — la conversion est automatique), et pour une entrée,
   le fournisseur, le numéro de facture, et la **date de péremption du lot**
   (facultative — utile pour les produits alimentaires/périssables). **Pour un
   ajustement uniquement**, la quantité peut être négative (ex : `-12`) pour
@@ -314,7 +314,7 @@ Menu **"Stock"** :
   [3.6](#36-statistiques-et-prévisions)).
 - **Fiche d'inventaire à l'aveugle** : bouton dédié au-dessus du tableau
   "Produits & stock courant" — génère un PDF listant tous les produits actifs
-  (catégorie, code-barres, unités par carton/pack) avec des colonnes vides à
+  (catégorie, code-barres, unités par carton/casier) avec des colonnes vides à
   remplir à la main, **sans afficher le stock théorique du système**. Pensé
   pour faire compter physiquement le stock par une tierce personne sans la
   biaiser (voir [3.8](#38-comptages-physiques-réguliers-protection-contre-la-substitution-de-produits)).
@@ -365,7 +365,7 @@ chaque erreur (numéro de ligne + message) est affiché après l'import.
 | `name` | **Oui** | Nom du produit, affiché partout (caisse, reçus, stock). |
 | `category` | **Oui** | Catégorie libre (texte), utilisée pour la ventilation des ventes par catégorie dans les statistiques. |
 | `unit_carton_qty` | Non (défaut 24) | Nombre d'unités dans un carton — sert à la conversion automatique lors d'un mouvement de stock saisi en cartons. |
-| `unit_pack_qty` | Non (défaut 6) | Nombre d'unités dans un pack — même rôle que ci-dessus pour les packs. |
+| `unit_pack_qty` | Non (défaut 6) | Nombre d'unités dans un casier — même rôle que ci-dessus pour les casiers. |
 | `prix_achat` | **Oui** | Prix d'achat unitaire (GNF). Sert au calcul de la marge minimale autorisée. |
 | `prix_vente` | **Oui** | Prix de vente unitaire (GNF). **Anti-fraude** : ne peut pas être inférieur à `prix_achat − 5 %` (la règle s'applique aussi à l'import, une ligne qui viole ça est rejetée). |
 | `stock_min_cartons` | Non (défaut 5) | Seuil d'alerte de rupture, en cartons. |
@@ -382,7 +382,7 @@ besoin, depuis "Stock") et l'identifiant (généré automatiquement).
 | `barcode` | **Oui** | Code-barres du produit concerné — doit déjà exister en base (créez le produit d'abord si besoin). |
 | `type` | **Oui** | `entree`, `casse`, `don`, ou `ajustement`. (Pas `sortie_vente` : réservée aux ventes, jamais saisie manuellement.) |
 | `qty` | **Oui** | Quantité, positive sauf pour `ajustement` où une valeur négative signale un manque constaté (voir [3.1](#31-gérer-le-stock)). |
-| `unit` | Non (défaut `unite`) | `unite`, `carton`, ou `pack` — conversion automatique. |
+| `unit` | Non (défaut `unite`) | `unite`, `carton`, ou `pack` (affiché "Casier" dans l'interface, mais la valeur attendue dans ce fichier CSV reste `pack`) — conversion automatique. |
 | `invoice_number` | Non | Numéro de facture fournisseur (pertinent pour une entrée). |
 | `expiry_date` | Non | Date de péremption du lot, format `AAAA-MM-JJ` (pertinent pour une entrée — voir [3.1](#31-gérer-le-stock)). |
 | `reason` | Non | Motif du mouvement — pas techniquement obligatoire dans le fichier, mais fortement recommandé pour une casse/don/ajustement (utile lors de la validation par la 2ᵉ personne). |
