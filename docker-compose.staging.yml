@@ -9,6 +9,16 @@ services:
   app:
     ports:
       - "127.0.0.1:8001:8000"
+    environment:
+      # Cible le nom de conteneur exact (staging-db-1), pas l'alias de service
+      # "db" : Docker enregistre automatiquement chaque service sous son nom
+      # sur TOUS les reseaux qu'il rejoint, y compris caddy-net - ou le "db"
+      # de PROD est aussi joignable (alias "proddb" + nom de service "db").
+      # Comme cette app est aussi sur caddy-net (pour l'alias "stagingapp"
+      # ci-dessous), resoudre juste "db" est ambigu et peut pointer vers la
+      # base de PROD au lieu de la sienne (meme bug que celui corrige dans le
+      # Caddyfile pour "app").
+      DATABASE_URL: postgresql+psycopg2://cave_du_coin:${POSTGRES_PASSWORD:-change-me}@staging-db-1:5432/cave_du_coin
     networks:
       default:
       # Rejoint le réseau partagé avec le stack prod pour être joignable
