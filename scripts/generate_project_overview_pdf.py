@@ -106,7 +106,7 @@ def build() -> None:
             ("PDF", "reportlab + qrcode", "Reçus, devis, étiquettes produits, ce document"),
             ("Email", "smtplib (service mail.py)", "Envoi de reçus par email"),
             ("Frontend", "Jinja2 (templates serveur) + JS natif + Chart.js (CDN)", "Pas de framework JS : simplicité, pas de build step"),
-            ("Tests", "pytest + httpx (TestClient FastAPI)", "170 tests, unitaires et intégration HTTP"),
+            ("Tests", "pytest + httpx (TestClient FastAPI)", "172 tests, unitaires et intégration HTTP"),
             ("Conteneurisation", "Docker (python:3.12-slim) + Docker Compose", "Packaging et orchestration reproductible"),
             ("Reverse proxy / HTTPS", "Caddy 2", "HTTPS automatique (Let's Encrypt) sans configuration manuelle"),
             ("Hébergement", "VPS Hetzner (CX22, ~4,5 €/mois)", "Production réelle"),
@@ -170,7 +170,8 @@ def build() -> None:
         "de la création, conversion en vente réelle en un clic (réutilise toute la logique de vente : stock, "
         "paiement, anti-fraude), PDF dédié. Numéro court et non-ambigu (ex. <font face='Courier'>DEV-A7K9M</font>) "
         "scannable directement via le QR code imprimé ; nom et téléphone du client obligatoires à la création "
-        "pour permettre de retrouver un devis par recherche si le client perd son numéro.",
+        "pour permettre de retrouver un devis par recherche si le client perd son numéro. Email facultatif pour "
+        "l'envoyer directement en pièce jointe plutôt que (ou en plus de) l'imprimer.",
         "<b>Tableau de bord \"Aujourd'hui\"</b> : indicateurs du jour (CA, ventes, devis, mouvements de stock, "
         "remboursements, écarts de caisse) — tuiles avec accent coloré par métrique et animation de comptage à "
         "chaque rafraîchissement — plus un camembert des produits vendus et un flux d'activité chronologique, "
@@ -233,7 +234,7 @@ def build() -> None:
     ))
 
     # ------------------------------------------------------------------
-    story.append(Paragraph("7. Stratégie de tests — 170 tests", h1_style))
+    story.append(Paragraph("7. Stratégie de tests — 172 tests", h1_style))
     story.append(Paragraph(
         "La suite mélange volontairement deux niveaux, souvent dans un même fichier :",
         body_style,
@@ -255,7 +256,7 @@ def build() -> None:
             ("Ventes, reçus PDF, emails de reçu", "test_sales_and_receipts.py"),
             ("Sessions de caisse (ouverture/fermeture/écarts/résolution)", "test_cash_sessions.py"),
             ("Retours, avoir, crédit client, créances", "test_returns_and_credit.py, test_customer_credit.py"),
-            ("Devis (création, conversion, expiration, recherche client, anti-fraude)", "test_quotes.py (16 tests)"),
+            ("Devis (création, conversion, expiration, recherche client, envoi par email, anti-fraude)", "test_quotes.py (18 tests)"),
             ("Tableau de bord \"Aujourd'hui\"", "test_today_dashboard.py (5 tests)"),
             ("Fiche d'inventaire à l'aveugle", "test_inventory_sheet.py (4 tests)"),
             ("Stock : conversions, marges, double validation, ajustement négatif, lots FEFO", "test_products_stock_conversions.py"),
@@ -449,7 +450,7 @@ def build() -> None:
     story.append(Paragraph("13. Pitch en une minute", h1_style))
     story.append(Paragraph(
         "\"J'ai conçu et développé seul, de bout en bout, un logiciel de caisse et de gestion de stock pour un "
-        "commerce réel — API FastAPI/SQLAlchemy typée, 170 tests automatisés (unitaires et intégration), "
+        "commerce réel — API FastAPI/SQLAlchemy typée, 172 tests automatisés (unitaires et intégration), "
         "règles anti-fraude explicites dictées par un vrai besoin métier, containerisé avec Docker et déployé "
         "sur un VPS avec HTTPS automatique. J'ai aussi mis en place un environnement de staging synchronisé "
         "automatiquement depuis la prod chaque mois, des sauvegardes régulières avec rétention, et je documente "

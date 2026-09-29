@@ -344,29 +344,48 @@ async function createQuote() {
     return;
   }
 
+  const customerEmail = document.getElementById("quote-create-customer-email").value.trim() || null;
+
   const payload = {
     // Les devis ne connaissent pas encore la notion carton/casier cote API :
     // on convertit donc deja en unites de base avant envoi.
     items: cart.map((l) => ({ product_id: l.product_id, qty: lineUnits(l), quantity_confirmed: l.quantity_confirmed })),
     customer_name: customerName,
     customer_phone: customerPhone,
+    customer_email: customerEmail,
   };
 
   try {
     const quote = await apiFetch("/api/quotes", { method: "POST", body: JSON.stringify(payload) });
+    const emailButton = quote.customer_email
+      ? `<button class="secondary" onclick="emailQuote(${quote.id}, 'quote-email-status-${quote.id}')">Envoyer le devis par email</button> <span id="quote-email-status-${quote.id}"></span>`
+      : "";
     resultBox.innerHTML = `
       <div class="alert alert-success">
         Devis #${quote.quote_number} créé${quote.expires_at ? ` (valable jusqu'au ${quote.expires_at})` : ""}.
         <br /><br />
         <button class="secondary" onclick="openAuthenticatedPdf('/api/quotes/${quote.id}/pdf')">Imprimer le devis</button>
+        ${emailButton}
       </div>
     `;
     cart = [];
     document.getElementById("quote-customer-name").value = "";
     document.getElementById("quote-customer-phone").value = "";
+    document.getElementById("quote-create-customer-email").value = "";
     renderCart();
   } catch (err) {
     resultBox.innerHTML = `<div class="alert alert-error">${err.message}</div>`;
+  }
+}
+
+async function emailQuote(quoteId, statusElId) {
+  const statusEl = document.getElementById(statusElId);
+  statusEl.textContent = "Envoi en cours...";
+  try {
+    await apiFetch(`/api/quotes/${quoteId}/email`, { method: "POST", body: JSON.stringify({}) });
+    statusEl.textContent = "Devis envoyé par email ✓";
+  } catch (err) {
+    statusEl.textContent = "Erreur : " + err.message;
   }
 }
 

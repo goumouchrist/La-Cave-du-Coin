@@ -179,6 +179,7 @@ def build() -> None:
             "Ne nécessite PAS de session de caisse ouverte",
             "Numéro court (ex : DEV-A7K9M), scannable via le QR code imprimé",
             "Validité 15 jours par défaut",
+            "Email facultatif : imprimer OU envoyer le devis par email au client",
         ],
         note="Le prix imprimé reste valable même si le prix courant change entre-temps.",
     )

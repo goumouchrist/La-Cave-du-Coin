@@ -288,6 +288,7 @@ class QuoteCreate(BaseModel):
     customer_phone: str | None = Field(
         default=None, description="Téléphone du client — obligatoire si customer_id non fourni (pour pouvoir retrouver le devis plus tard)"
     )
+    customer_email: str | None = Field(default=None, description="Facultatif — permet d'envoyer le devis par email en plus de l'impression")
     validity_days: int | None = Field(default=None, description="Nombre de jours de validité (par défaut: QUOTE_VALIDITY_DAYS)")
 
 
@@ -308,6 +309,8 @@ class QuoteOut(BaseModel):
     customer_id: int | None
     customer_name: str | None
     customer_phone: str | None
+    customer_email: str | None
+    email_sent_at: datetime | None
     total_amount: int
     status: QuoteStatus
     expires_at: date | None
@@ -319,6 +322,10 @@ class QuoteOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class QuoteEmailRequest(BaseModel):
+    email: str | None = Field(default=None, description="Remplace l'email enregistré sur le devis, si fourni")
 
 
 class QuoteConvert(BaseModel):

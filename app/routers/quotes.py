@@ -4,9 +4,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.deps import client_ip, get_current_user
 from app.models import Product, Quote, User
-from app.schemas import QuoteConvert, QuoteCreate, QuoteOut, SaleOut
+from app.schemas import QuoteConvert, QuoteCreate, QuoteEmailRequest, QuoteOut, SaleOut
 from app.services import customers as customers_service
 from app.services import logs as logs_service
+from app.services import mail as mail_service
 from app.services import quotes as quotes_service
 from app.services import receipts as receipts_service
 from app.services import sales as sales_service
@@ -39,6 +40,7 @@ def create_quote(payload: QuoteCreate, request: Request, db: Session = Depends(g
             customer_id=payload.customer_id,
             customer_name=payload.customer_name,
             customer_phone=payload.customer_phone,
+            customer_email=payload.customer_email,
             validity_days=payload.validity_days,
         )
     except QUOTE_SERVICE_ERRORS as exc:
@@ -129,3 +131,35 @@ def get_quote_pdf(quote_id: int, request: Request, db: Session = Depends(get_db)
 
     logs_service.record(db, current_user.id, "quote_pdf_printed", {"quote_id": quote.id}, client_ip(request))
     return Response(content=pdf_bytes, media_type="application/pdf")
+
+
+@router.post("/{quote_id}/email", response_model=QuoteOut)
+def email_quote(quote_id: int, payload: QuoteEmailRequest, request: Request, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    quote = db.get(Quote, quote_id)
+    if not quote:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Devis introuvable")
+
+    recipient = payload.email or quote.customer_email
+    if not recipient:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Aucune adresse email renseignée pour ce devis")
+
+    products_by_id = {item.product_id: db.get(Product, item.product_id) for item in quote.items}
+    creator = db.get(User, quote.created_by)
+    creator_name = (creator.full_name or creator.username) if creator else ""
+    pdf_bytes = receipts_service.build_quote_pdf(quote, products_by_id, creator_name, is_duplicata=False)
+
+    try:
+        mail_service.send_email(
+            recipient,
+            f"Devis {quote.quote_number} - La Cave du Coin",
+            "Voici votre devis en pièce jointe. N'hésitez pas à nous contacter pour toute question.",
+            attachment=(f"devis_{quote.quote_number}.pdf", pdf_bytes, "pdf"),
+        )
+    except mail_service.MailNotConfiguredError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+    except mail_service.MailSendError as exc:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
+
+    quotes_service.register_email_sent(db, quote)
+    logs_service.record(db, current_user.id, "quote_emailed", {"quote_id": quote.id, "email": recipient}, client_ip(request))
+    return quote

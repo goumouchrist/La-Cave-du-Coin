@@ -47,6 +47,7 @@ def create_quote(
     customer_id: int | None = None,
     customer_name: str | None = None,
     customer_phone: str | None = None,
+    customer_email: str | None = None,
     validity_days: int | None = None,
 ) -> Quote:
     # Nom + téléphone obligatoires (sauf client déjà identifié par customer_id) :
@@ -87,6 +88,7 @@ def create_quote(
         customer_id=customer_id,
         customer_name=customer_name,
         customer_phone=customer_phone,
+        customer_email=customer_email,
         total_amount=total,
         status=QuoteStatus.EN_COURS,
         expires_at=expires_at,
@@ -180,3 +182,9 @@ def register_print(db: Session, quote: Quote) -> bool:
     quote.print_count += 1
     db.commit()
     return quote.print_count > 1
+
+
+def register_email_sent(db: Session, quote: Quote) -> None:
+    """Marque le devis comme envoyé par email (horodatage), pour tracer qu'il n'a pas eu besoin d'être imprimé."""
+    quote.email_sent_at = datetime.now(timezone.utc)
+    db.commit()

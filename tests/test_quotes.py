@@ -324,3 +324,72 @@ def test_quote_pdf_endpoint_returns_pdf(client, auth_headers, db_session):
     assert pdf_res.status_code == 200
     assert pdf_res.headers["content-type"] == "application/pdf"
     assert pdf_res.content[:4] == b"%PDF"
+
+
+def test_email_quote_requires_an_email_address(client, auth_headers, db_session):
+    headers = auth_headers("cashier", Role.CAISSIER)
+    admin = create_user(db_session, "admin", "pw2", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw2", Role.MANAGER)
+    product = setup_product_with_stock(db_session, admin, manager)
+
+    res = client.post(
+        "/api/quotes",
+        json={"items": [{"product_id": product.id, "qty": 1}], "customer_name": CUSTOMER_NAME, "customer_phone": CUSTOMER_PHONE},
+        headers=headers,
+    )
+    quote_id = res.json()["id"]
+
+    email_res = client.post(f"/api/quotes/{quote_id}/email", json={}, headers=headers)
+    assert email_res.status_code == 422
+
+
+def test_email_quote_sends_pdf_and_marks_timestamp(client, auth_headers, db_session, monkeypatch):
+    from app.config import settings
+    from app.services import mail as mail_service
+
+    monkeypatch.setattr(settings, "SMTP_HOST", "smtp.example.com")
+    monkeypatch.setattr(settings, "SMTP_USER", "")
+    monkeypatch.setattr(settings, "SMTP_FROM", "boutique@example.com")
+
+    sent = {}
+
+    class FakeSMTP:
+        def __init__(self, host, port, timeout=None):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc_info):
+            return False
+
+        def starttls(self):
+            pass
+
+        def send_message(self, message):
+            sent["message"] = message
+
+    monkeypatch.setattr(mail_service.smtplib, "SMTP", FakeSMTP)
+
+    headers = auth_headers("cashier", Role.CAISSIER)
+    admin = create_user(db_session, "admin", "pw2", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw2", Role.MANAGER)
+    product = setup_product_with_stock(db_session, admin, manager)
+
+    res = client.post(
+        "/api/quotes",
+        json={
+            "items": [{"product_id": product.id, "qty": 1}],
+            "customer_name": CUSTOMER_NAME, "customer_phone": CUSTOMER_PHONE,
+            "customer_email": "client@example.com",
+        },
+        headers=headers,
+    )
+    quote = res.json()
+    assert quote["customer_email"] == "client@example.com"
+    assert quote["email_sent_at"] is None
+
+    email_res = client.post(f"/api/quotes/{quote['id']}/email", json={}, headers=headers)
+    assert email_res.status_code == 200, email_res.text
+    assert email_res.json()["email_sent_at"] is not None
+    assert sent["message"]["To"] == "client@example.com"

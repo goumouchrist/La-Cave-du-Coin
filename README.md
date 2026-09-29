@@ -66,8 +66,9 @@ Monnaie : **Franc Guinéen (GNF)**.
   de la péremption au plus lointain. Alertes automatiques (délai configurable,
   7 jours par défaut) sur le tableau de bord.
 - **Devis** : créer un devis (prix figé, sans encaissement ni sortie de
-  stock, ne nécessite pas de session de caisse ouverte), l'imprimer en PDF,
-  puis le convertir en une vraie vente en un clic (réutilise le prix figé,
+  stock, ne nécessite pas de session de caisse ouverte), l'imprimer en PDF ou
+  l'envoyer par email au client (email facultatif à la création), puis le
+  convertir en une vraie vente en un clic (réutilise le prix figé,
   décrémente le stock, encaisse le paiement). Un devis expiré ou déjà converti
   ne peut plus être reconverti.
 - **Fiche d'inventaire à l'aveugle** : PDF listant tous les produits actifs
@@ -177,7 +178,7 @@ Créés par `scripts/seed_data.py` :
 ./.venv/Scripts/python.exe -m pytest -q
 ```
 
-170 tests couvrant : permissions par rôle, conversions d'unités
+172 tests couvrant : permissions par rôle, conversions d'unités
 (carton/casier/unité), ouverture/fermeture de caisse et blocage sur écart,
 création de vente (stock, monnaie, règle des >5 articles identiques),
 règles anti-fraude (annulation, prix minimum, duplicata, double validation

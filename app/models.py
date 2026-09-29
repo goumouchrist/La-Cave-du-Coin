@@ -207,6 +207,8 @@ class Quote(Base):
     customer_id: Mapped[int | None] = mapped_column(ForeignKey("customers.id"), nullable=True)
     customer_name: Mapped[str | None] = mapped_column(String(120), nullable=True)
     customer_phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    customer_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     total_amount: Mapped[int] = mapped_column(Integer)
     status: Mapped[QuoteStatus] = mapped_column(Enum(QuoteStatus), default=QuoteStatus.EN_COURS)
     expires_at: Mapped[date | None] = mapped_column(Date, nullable=True)

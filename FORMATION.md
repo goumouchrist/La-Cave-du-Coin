@@ -233,10 +233,13 @@ Un client qui veut connaître le prix avant d'acheter peut se voir remettre un
 2. Renseigner le **nom et le téléphone** du client — **obligatoires** (c'est ce
    qui permet de retrouver le devis plus tard si le client perd son numéro,
    voir la recherche par client dans [2.8](#28-convertir-un-devis-en-vente)).
+   L'**email est facultatif** — le renseigner permet d'envoyer le devis par
+   email en plus (ou à la place) de l'impression.
 3. Cliquer **"Créer un devis"**.
 4. Le devis reçoit un numéro unique (ex : `DEV-...`) et une date de validité
    (**15 jours** par défaut). Cliquer **"Imprimer le devis"** pour le remettre
-   au client.
+   au client, ou, si un email a été renseigné, **"Envoyer le devis par
+   email"** pour le lui transmettre directement en PDF.
 
 **Contrairement à une vente, créer un devis ne nécessite pas de session de
 caisse ouverte** — possible même caisse fermée.
