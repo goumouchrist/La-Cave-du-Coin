@@ -51,4 +51,7 @@ else
     | docker exec -i "$STAGING_DB" pg_restore -U cave_du_coin -d cave_du_coin --clean --if-exists
 fi
 
+log "reapplication des migrations (une sauvegarde plus ancienne que le code peut recreer une table avec une structure obsolete, ex: colonne manquante)"
+docker exec staging-app-1 alembic upgrade head
+
 log "termine avec succes"
