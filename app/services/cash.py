@@ -4,7 +4,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import CashSession, CashSessionStatus, PaymentMode, Sale, SaleStatus
+from app.models import CashSession, CashSessionStatus, PaymentMode, Return, Sale, SaleStatus
 
 
 class SessionAlreadyOpenError(Exception):
@@ -37,7 +37,11 @@ def compute_theoretical_amount(db: Session, session_: CashSession) -> int:
         Sale.payment_mode == PaymentMode.ESPECES,
         Sale.status == SaleStatus.VALIDE,
     ).scalar()
-    return session_.opening_amount + int(cash_sales)
+    cash_refunds = db.query(func.coalesce(func.sum(Return.total_refund_gnf), 0)).filter(
+        Return.cash_session_id == session_.id,
+        Return.refund_mode == PaymentMode.ESPECES,
+    ).scalar()
+    return session_.opening_amount + int(cash_sales) - int(cash_refunds)
 
 
 def resolve_blocked_session(db: Session, session_: CashSession, resolver_id: int, comment: str) -> CashSession:
@@ -81,11 +85,11 @@ def compute_summary(db: Session, session_: CashSession) -> dict:
 
 
 def list_cash_movements(db: Session, session_: CashSession) -> list[dict]:
-    """Détail, vente par vente, de tout ce qui compose le montant théorique en
-    espèces de la session (avec un total qui s'accumule au fil des ventes) :
-    permet au caissier de vérifier en cours de journée que le tiroir
-    correspond bien à ce qu'attend le système, plutôt que de découvrir un
-    écart uniquement au moment de la fermeture."""
+    """Détail chronologique de tout ce qui compose le montant théorique en
+    espèces de la session (ventes espèces + remboursements espèces, avec un
+    total qui s'accumule au fil du temps) : permet au caissier de vérifier en
+    cours de journée que le tiroir correspond bien à ce qu'attend le système,
+    plutôt que de découvrir un écart uniquement au moment de la fermeture."""
     sales = (
         db.query(Sale)
         .filter(
@@ -93,24 +97,41 @@ def list_cash_movements(db: Session, session_: CashSession) -> list[dict]:
             Sale.payment_mode == PaymentMode.ESPECES,
             Sale.status == SaleStatus.VALIDE,
         )
-        .order_by(Sale.created_at.asc())
+        .all()
+    )
+    refunds = (
+        db.query(Return)
+        .filter(Return.cash_session_id == session_.id, Return.refund_mode == PaymentMode.ESPECES)
         .all()
     )
 
+    entries = [
+        {
+            "movement_type": "vente",
+            "sale_id": sale.id,
+            "transaction_number": sale.transaction_number,
+            "cashier_id": sale.cashier_id,
+            "amount": sale.total_amount,
+            "created_at": sale.created_at,
+        }
+        for sale in sales
+    ] + [
+        {
+            "movement_type": "remboursement_especes",
+            "return_id": refund.id,
+            "cashier_id": refund.processed_by,
+            "amount": -refund.total_refund_gnf,
+            "created_at": refund.created_at,
+        }
+        for refund in refunds
+    ]
+    entries.sort(key=lambda e: e["created_at"])
+
     running_total = session_.opening_amount
     movements = []
-    for sale in sales:
-        running_total += sale.total_amount
-        movements.append(
-            {
-                "sale_id": sale.id,
-                "transaction_number": sale.transaction_number,
-                "cashier_id": sale.cashier_id,
-                "amount": sale.total_amount,
-                "running_total": running_total,
-                "created_at": sale.created_at,
-            }
-        )
+    for entry in entries:
+        running_total += entry["amount"]
+        movements.append({**entry, "running_total": running_total})
     return movements
 
 

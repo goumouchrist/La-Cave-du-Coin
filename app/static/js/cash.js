@@ -51,17 +51,21 @@ async function refreshStatus() {
   const movements = await apiFetch(`/api/cash-sessions/${session.id}/cash-movements`);
   document.getElementById("cash-movements-body").innerHTML = movements.length
     ? movements
-        .map(
-          (m) => `
-          <tr>
+        .map((m) => {
+          const isRefund = m.movement_type === "remboursement_especes";
+          const label = isRefund ? "Remboursement" : "Vente";
+          const reference = isRefund ? `Retour #${m.return_id}` : m.transaction_number;
+          return `
+          <tr${isRefund ? " style=\"color:var(--danger)\"" : ""}>
             <td>${new Date(m.created_at).toLocaleTimeString("fr-FR")}</td>
-            <td>${m.transaction_number}</td>
+            <td>${label}</td>
+            <td>${reference}</td>
             <td>${formatGNF(m.amount)}</td>
             <td><b>${formatGNF(m.running_total)}</b></td>
-          </tr>`
-        )
+          </tr>`;
+        })
         .join("")
-    : `<tr><td colspan="4">Aucune vente en espèces enregistrée sur cette session pour l'instant (fond de caisse initial : ${formatGNF(session.opening_amount)}).</td></tr>`;
+    : `<tr><td colspan="5">Aucune vente en espèces enregistrée sur cette session pour l'instant (fond de caisse initial : ${formatGNF(session.opening_amount)}).</td></tr>`;
 }
 
 const CAN_RESOLVE_ROLES = ["manager", "admin", "super_admin"];

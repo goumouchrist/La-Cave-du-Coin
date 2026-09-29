@@ -290,6 +290,12 @@ class Return(Base):
     processed_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
     reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     total_refund_gnf: Mapped[int] = mapped_column(Integer)
+    # AVOIR (par défaut, comportement historique) crédite le solde client ;
+    # ESPECES rend l'argent physiquement et doit être rattaché à la session de
+    # caisse ouverte pour que compute_theoretical_amount le soustraie du
+    # montant théorique attendu au comptage.
+    refund_mode: Mapped[PaymentMode] = mapped_column(Enum(PaymentMode), default=PaymentMode.AVOIR)
+    cash_session_id: Mapped[int | None] = mapped_column(ForeignKey("cash_sessions.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     items: Mapped[list["ReturnItem"]] = relationship(back_populates="return_", cascade="all, delete-orphan")

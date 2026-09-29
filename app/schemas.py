@@ -197,8 +197,10 @@ class CashSessionSummary(BaseModel):
 
 
 class CashMovementOut(BaseModel):
-    sale_id: int
-    transaction_number: str
+    movement_type: str  # "vente" ou "remboursement_especes"
+    sale_id: int | None = None
+    return_id: int | None = None
+    transaction_number: str | None = None
     cashier_id: int
     amount: int
     running_total: int
@@ -378,6 +380,7 @@ class ReturnCreate(BaseModel):
     customer_phone: str | None = None
     items: list[ReturnItemIn]
     reason: str | None = None
+    refund_mode: PaymentMode = PaymentMode.AVOIR
 
 
 class ReturnItemOut(BaseModel):
@@ -395,6 +398,7 @@ class ReturnOut(BaseModel):
     sale_id: int
     customer_id: int
     total_refund_gnf: int
+    refund_mode: PaymentMode
     reason: str | None
     created_at: datetime
     items: list[ReturnItemOut]

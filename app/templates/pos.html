@@ -141,7 +141,12 @@
         <br /><br />
         <input type="text" id="return-reason" placeholder="Motif du retour" />
         <br /><br />
-        <button id="return-submit">Créditer le client (avoir)</button>
+        <select id="return-refund-mode">
+          <option value="avoir">Avoir (crédit sur le compte client)</option>
+          <option value="especes">Remboursement en espèces (sort de la caisse)</option>
+        </select>
+        <br /><br />
+        <button id="return-submit">Valider le retour</button>
       </div>
       <div id="return-result"></div>
     </div>

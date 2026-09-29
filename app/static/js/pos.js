@@ -551,22 +551,29 @@ async function submitReturn() {
     return;
   }
 
+  const refundMode = document.getElementById("return-refund-mode").value;
+
   const payload = {
     customer_name: document.getElementById("return-customer-name").value.trim(),
     customer_phone: document.getElementById("return-customer-phone").value.trim() || null,
     reason: document.getElementById("return-reason").value.trim() || null,
+    refund_mode: refundMode,
     items,
   };
 
   if (!payload.customer_name) {
-    errorBox.textContent = "Le nom du client est requis pour créditer son avoir.";
+    errorBox.textContent = "Le nom du client est requis, quel que soit le mode de remboursement (traçabilité).";
     errorBox.style.display = "block";
     return;
   }
 
   try {
     const result = await apiFetch(`/api/sales/${returnSale.id}/return`, { method: "POST", body: JSON.stringify(payload) });
-    resultBox.innerHTML = `<div class="alert alert-success">Retour enregistré : ${formatGNF(result.total_refund_gnf)} crédités sur l'avoir du client.</div>`;
+    const message =
+      refundMode === "especes"
+        ? `Retour enregistré : ${formatGNF(result.total_refund_gnf)} remboursés en espèces (déduits de la caisse en cours).`
+        : `Retour enregistré : ${formatGNF(result.total_refund_gnf)} crédités sur l'avoir du client.`;
+    resultBox.innerHTML = `<div class="alert alert-success">${message}</div>`;
     document.getElementById("return-details").style.display = "none";
     document.getElementById("return-transaction").value = "";
     returnSale = null;

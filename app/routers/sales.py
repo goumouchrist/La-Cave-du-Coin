@@ -29,6 +29,7 @@ RETURN_SERVICE_ERRORS = (
     returns_service.SaleNotEligibleError,
     returns_service.ReturnQuantityExceededError,
     returns_service.SaleItemNotFoundError,
+    returns_service.NoOpenCashSessionError,
 )
 
 
@@ -163,13 +164,22 @@ def create_return(sale_id: int, payload: ReturnCreate, request: Request, db: Ses
             payload.customer_phone,
             current_user,
             payload.reason,
+            payload.refund_mode,
         )
+    except returns_service.CashRefundRequiresManagerError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc))
     except RETURN_SERVICE_ERRORS as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
 
     logs_service.record(
         db, current_user.id, "return_created",
-        {"return_id": return_.id, "sale_id": sale.id, "refund": return_.total_refund_gnf}, client_ip(request),
+        {
+            "return_id": return_.id,
+            "sale_id": sale.id,
+            "refund": return_.total_refund_gnf,
+            "refund_mode": return_.refund_mode.value,
+        },
+        client_ip(request),
     )
     return return_
 

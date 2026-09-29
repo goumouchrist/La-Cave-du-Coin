@@ -171,3 +171,99 @@ def test_sale_with_avoir_blocked_when_credit_insufficient(db_session):
             items=[{"product_id": product.id, "qty": 1}],
             customer_id=customer.id,
         )
+
+
+def test_cash_refund_reduces_theoretical_cash_without_crediting_avoir(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=10000)
+    sale = make_sale(db_session, cashier, session_, product, qty=2)
+
+    theoretical_before_refund = cash_service.compute_theoretical_amount(db_session, session_)
+
+    return_ = returns_service.create_return(
+        db_session, sale,
+        items=[{"sale_item_id": sale.items[0].id, "qty": 1}],
+        customer_name="Fatou Camara", customer_phone="+224600000001",
+        processed_by=cashier, refund_mode=PaymentMode.ESPECES,
+    )
+
+    assert return_.refund_mode == PaymentMode.ESPECES
+    assert return_.cash_session_id == session_.id
+
+    from app.models import Customer
+    customer = db_session.get(Customer, return_.customer_id)
+    assert customer.credit_balance_gnf == 0  # pas d'avoir crédité en mode espèces
+
+    theoretical_after_refund = cash_service.compute_theoretical_amount(db_session, session_)
+    assert theoretical_after_refund == theoretical_before_refund - return_.total_refund_gnf
+
+
+def test_cash_refund_requires_open_cash_session(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+    sale = make_sale(db_session, cashier, session_, product, qty=2)
+    cash_service.close_session(db_session, session_, cashier.id, closing_physical=cash_service.compute_theoretical_amount(db_session, session_))
+
+    with pytest.raises(returns_service.NoOpenCashSessionError):
+        returns_service.create_return(
+            db_session, sale,
+            items=[{"sale_item_id": sale.items[0].id, "qty": 1}],
+            customer_name="Fatou Camara", customer_phone="+224600000001",
+            processed_by=cashier, refund_mode=PaymentMode.ESPECES,
+        )
+
+
+def test_cash_refund_above_threshold_blocked_for_cashier_but_allowed_for_manager(db_session):
+    from app.config import settings
+
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    big_prix_vente = settings.RETURN_CASH_REFUND_MANAGER_THRESHOLD_GNF + 5000
+    product = setup_product_with_stock(db_session, admin, manager, prix_vente=big_prix_vente, prix_achat=big_prix_vente - 1000)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+    sale = make_sale(db_session, cashier, session_, product, qty=1)
+
+    with pytest.raises(returns_service.CashRefundRequiresManagerError):
+        returns_service.create_return(
+            db_session, sale,
+            items=[{"sale_item_id": sale.items[0].id, "qty": 1}],
+            customer_name="Fatou Camara", customer_phone="+224600000001",
+            processed_by=cashier, refund_mode=PaymentMode.ESPECES,
+        )
+
+    sale2 = make_sale(db_session, cashier, session_, product, qty=1)
+    return_ = returns_service.create_return(
+        db_session, sale2,
+        items=[{"sale_item_id": sale2.items[0].id, "qty": 1}],
+        customer_name="Fatou Camara", customer_phone="+224600000001",
+        processed_by=manager, refund_mode=PaymentMode.ESPECES,
+    )
+    assert return_.refund_mode == PaymentMode.ESPECES
+
+
+def test_cash_refund_restores_stock_same_as_avoir_refund(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+    sale = make_sale(db_session, cashier, session_, product, qty=2)
+
+    from app.services.products import get_current_stock_units
+    stock_before_return = get_current_stock_units(db_session, product.id)
+
+    returns_service.create_return(
+        db_session, sale,
+        items=[{"sale_item_id": sale.items[0].id, "qty": 1}],
+        customer_name="Fatou Camara", customer_phone="+224600000001",
+        processed_by=cashier, refund_mode=PaymentMode.ESPECES,
+    )
+
+    assert get_current_stock_units(db_session, product.id) == stock_before_return + 1
