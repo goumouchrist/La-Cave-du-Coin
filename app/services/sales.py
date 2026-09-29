@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.models import CashSession, CashSessionStatus, Customer, MovementType, PaymentMode, Product, Role, Sale, SaleItem, SaleStatus, User
 from app.services import customers as customers_service
-from app.services.products import get_current_stock_units
+from app.services.products import convert_to_units, get_current_stock_units
 from app.services.stock import create_movement
 from app.utils import generate_short_code, round_gnf, to_aware_utc
 
@@ -99,26 +99,31 @@ def create_sale(
         if product is None or not product.is_active:
             raise ProductNotFoundError(f"Produit inconnu (id={item['product_id']})")
 
-        qty = item["qty"]
+        # qty est exprime dans l'unite choisie (unite/carton/pack) - converti
+        # en unites de base pour le stock, le seuil anti-fraude et le prix :
+        # le seuil "> 5 articles identiques" doit refleter la quantite
+        # physique reelle qui sort (ex: 1 carton de 24 le declenche), pas le
+        # nombre saisi au comptoir.
+        qty_units = convert_to_units(product, item["qty"], item.get("unit", "unite"))
 
-        if qty > settings.IDENTICAL_ITEMS_CONFIRM_THRESHOLD and not item.get("quantity_confirmed"):
+        if qty_units > settings.IDENTICAL_ITEMS_CONFIRM_THRESHOLD and not item.get("quantity_confirmed"):
             raise QuantityConfirmationRequiredError(
-                f"Vente de {qty} x '{product.name}' (> {settings.IDENTICAL_ITEMS_CONFIRM_THRESHOLD}) : "
+                f"Vente de {qty_units} x '{product.name}' (> {settings.IDENTICAL_ITEMS_CONFIRM_THRESHOLD}) : "
                 "confirmation de quantité requise (double scan / bouton confirmer)."
             )
 
         available = get_current_stock_units(db, product.id)
-        if available < qty:
-            raise InsufficientStockError(f"Stock insuffisant pour '{product.name}' (disponible: {available}, demandé: {qty})")
+        if available < qty_units:
+            raise InsufficientStockError(f"Stock insuffisant pour '{product.name}' (disponible: {available}, demandé: {qty_units})")
 
         line_price = item.get("unit_price_override", product.prix_vente)
-        line_total = line_price * qty
+        line_total = line_price * qty_units
         total += line_total
 
         sale_items.append(
             SaleItem(
                 product_id=product.id,
-                qty_units=qty,
+                qty_units=qty_units,
                 unit_price=line_price,
                 quantity_confirmed=item.get("quantity_confirmed", False),
             )

@@ -80,7 +80,12 @@ Menu **"Caisse"** :
      dans le champ en haut de la page.
    - Cliquer directement sur un produit dans la liste "recherche rapide".
 2. **Ajuster les quantités** avec les boutons `+` / `-` sur chaque ligne du
-   panier, ou retirer une ligne avec le bouton `X`.
+   panier, ou retirer une ligne avec le bouton `X`. **Choisir l'unité** (Unité
+   / Carton / Casier) dans le menu déroulant de la ligne : les boutons `+`/`-`
+   incrémentent alors par carton ou par casier entier plutôt que par unité —
+   pratique pour une vente en gros. Le prix et le stock décrémenté suivent
+   automatiquement la conversion (ex : 1 carton d'un produit à 24 unités/
+   carton = 24 unités réelles).
 3. **Choisir le mode de paiement** dans la liste déroulante :
    - **Espèces**, **Mobile Money**, **Soutra Money**, **Crédit Money**,
      **Paycard** : les plus simples, rien de particulier à faire.
@@ -99,6 +104,9 @@ Menu **"Caisse"** :
 **Vente de plus de 5 articles identiques** : le système demande une
 confirmation explicite (bouton "Confirmer" sur la ligne) avant de valider —
 c'est normal, c'est une protection anti-fraude (voir [section 6](#6-règles-anti-fraude-à-connaître)).
+Ce seuil se base sur le nombre réel d'unités après conversion : vendre "1
+carton" de 24 unités déclenche la confirmation, même si le chiffre saisi
+n'est que "1".
 
 ### 2.3 Vente à crédit pour un client fidèle
 

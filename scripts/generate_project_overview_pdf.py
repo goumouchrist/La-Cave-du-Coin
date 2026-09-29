@@ -106,7 +106,7 @@ def build() -> None:
             ("PDF", "reportlab + qrcode", "Reçus, devis, étiquettes produits, ce document"),
             ("Email", "smtplib (service mail.py)", "Envoi de reçus par email"),
             ("Frontend", "Jinja2 (templates serveur) + JS natif + Chart.js (CDN)", "Pas de framework JS : simplicité, pas de build step"),
-            ("Tests", "pytest + httpx (TestClient FastAPI)", "168 tests, unitaires et intégration HTTP"),
+            ("Tests", "pytest + httpx (TestClient FastAPI)", "170 tests, unitaires et intégration HTTP"),
             ("Conteneurisation", "Docker (python:3.12-slim) + Docker Compose", "Packaging et orchestration reproductible"),
             ("Reverse proxy / HTTPS", "Caddy 2", "HTTPS automatique (Let's Encrypt) sans configuration manuelle"),
             ("Hébergement", "VPS Hetzner (CX22, ~4,5 €/mois)", "Production réelle"),
@@ -147,9 +147,10 @@ def build() -> None:
     # ------------------------------------------------------------------
     story.append(Paragraph("4. Fonctionnalités métier principales", h1_style))
     story.append(bullets([
-        "<b>Caisse / ventes</b> : panier, scan code-barres, plusieurs modes de paiement (espèces, mobile money, "
-        "crédit, avoir, paycard...), calcul automatique de la monnaie, sessions de caisse (fond initial, écart "
-        "théorique/physique, blocage automatique si écart &gt; seuil).",
+        "<b>Caisse / ventes</b> : panier, scan code-barres, vente au choix par unité/carton/casier (conversion "
+        "automatique vers l'unité de base pour le prix et le stock), plusieurs modes de paiement (espèces, "
+        "mobile money, crédit, avoir, paycard...), calcul automatique de la monnaie, sessions de caisse (fond "
+        "initial, écart théorique/physique, blocage automatique si écart &gt; seuil).",
         "<b>Stock</b> : mouvements (entrée, casse, don, ajustement) avec <b>double validation obligatoire</b> "
         "par une personne différente de celle qui saisit, conversions carton/casier/unité automatiques, import "
         "CSV en masse, alertes de rupture prévisionnelle. Un ajustement peut être négatif (manque constaté au "
@@ -195,7 +196,7 @@ def build() -> None:
         [
             ("Annulation d'un ticket par un caissier", "possible seulement dans les 5 min suivant la vente, motif obligatoire"),
             ("Annulation par un manager/admin", "possible à tout moment"),
-            ("Vente/devis de plusieurs articles identiques", "confirmation manuelle au-delà de 5 unités du même produit"),
+            ("Vente/devis de plusieurs articles identiques", "confirmation manuelle au-delà de 5 unités réelles (après conversion carton/casier)"),
             ("Double scan du même produit", "alerte si moins de 2 secondes entre deux scans"),
             ("Écart de caisse à la fermeture", "session bloquée si écart &gt; 10 000 GNF, déblocage par un manager avec commentaire obligatoire"),
             ("Mouvement de stock hors vente", "doit être validé par une personne différente de celle qui l'a saisi"),
@@ -231,7 +232,7 @@ def build() -> None:
     ))
 
     # ------------------------------------------------------------------
-    story.append(Paragraph("7. Stratégie de tests — 168 tests", h1_style))
+    story.append(Paragraph("7. Stratégie de tests — 170 tests", h1_style))
     story.append(Paragraph(
         "La suite mélange volontairement deux niveaux, souvent dans un même fichier :",
         body_style,
@@ -447,7 +448,7 @@ def build() -> None:
     story.append(Paragraph("13. Pitch en une minute", h1_style))
     story.append(Paragraph(
         "\"J'ai conçu et développé seul, de bout en bout, un logiciel de caisse et de gestion de stock pour un "
-        "commerce réel — API FastAPI/SQLAlchemy typée, 168 tests automatisés (unitaires et intégration), "
+        "commerce réel — API FastAPI/SQLAlchemy typée, 170 tests automatisés (unitaires et intégration), "
         "règles anti-fraude explicites dictées par un vrai besoin métier, containerisé avec Docker et déployé "
         "sur un VPS avec HTTPS automatique. J'ai aussi mis en place un environnement de staging synchronisé "
         "automatiquement depuis la prod chaque mois, des sauvegardes régulières avec rétention, et je documente "

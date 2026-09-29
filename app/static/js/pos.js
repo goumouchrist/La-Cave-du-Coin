@@ -157,14 +157,28 @@ async function scanBarcode(barcode) {
   }
 }
 
+const UNIT_LABELS = { unite: "Unité", carton: "Carton", pack: "Casier" };
+
+function conversionFactor(productId, unit) {
+  const product = allProducts.find((p) => p.id === productId);
+  if (!product) return 1;
+  if (unit === "carton") return product.unit_carton_qty;
+  if (unit === "pack") return product.unit_pack_qty;
+  return 1;
+}
+
+function lineUnits(line) {
+  return line.qty * conversionFactor(line.product_id, line.unit);
+}
+
 function addToCart(product) {
   let line = cart.find((l) => l.product_id === product.product_id);
   if (!line) {
-    line = { product_id: product.product_id, name: product.name, prix_vente: product.prix_vente, qty: 0, quantity_confirmed: false };
+    line = { product_id: product.product_id, name: product.name, prix_vente: product.prix_vente, qty: 0, unit: "unite", quantity_confirmed: false };
     cart.push(line);
   }
   line.qty += 1;
-  if (line.qty > IDENTICAL_ITEMS_CONFIRM_THRESHOLD) {
+  if (lineUnits(line) > IDENTICAL_ITEMS_CONFIRM_THRESHOLD) {
     line.quantity_confirmed = false;
   }
   renderCart();
@@ -176,17 +190,23 @@ function renderCart() {
   let total = 0;
 
   cart.forEach((line, idx) => {
-    const lineTotal = line.qty * line.prix_vente;
+    const units = lineUnits(line);
+    const lineTotal = units * line.prix_vente;
     total += lineTotal;
-    const needsConfirm = line.qty > IDENTICAL_ITEMS_CONFIRM_THRESHOLD && !line.quantity_confirmed;
+    const needsConfirm = units > IDENTICAL_ITEMS_CONFIRM_THRESHOLD && !line.quantity_confirmed;
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${line.name}${needsConfirm ? ' <span style="color:var(--danger)">(confirmation requise)</span>' : ""}</td>
+      <td>${line.name}${needsConfirm ? ` <span style="color:var(--danger)">(confirmation requise, ${units} unités)</span>` : ""}</td>
       <td>
         <button class="secondary" onclick="changeQty(${idx}, -1)">-</button>
         ${line.qty}
         <button class="secondary" onclick="changeQty(${idx}, 1)">+</button>
+      </td>
+      <td>
+        <select onchange="changeUnit(${idx}, this.value)">
+          ${Object.entries(UNIT_LABELS).map(([value, label]) => `<option value="${value}" ${line.unit === value ? "selected" : ""}>${label}</option>`).join("")}
+        </select>
       </td>
       <td>${formatGNF(line.prix_vente)}</td>
       <td>${formatGNF(lineTotal)}</td>
@@ -206,9 +226,15 @@ function changeQty(idx, delta) {
   cart[idx].qty = Math.max(0, cart[idx].qty + delta);
   if (cart[idx].qty === 0) {
     cart.splice(idx, 1);
-  } else if (cart[idx].qty <= IDENTICAL_ITEMS_CONFIRM_THRESHOLD) {
+  } else if (lineUnits(cart[idx]) <= IDENTICAL_ITEMS_CONFIRM_THRESHOLD) {
     cart[idx].quantity_confirmed = false;
   }
+  renderCart();
+}
+
+function changeUnit(idx, unit) {
+  cart[idx].unit = unit;
+  cart[idx].quantity_confirmed = lineUnits(cart[idx]) <= IDENTICAL_ITEMS_CONFIRM_THRESHOLD;
   renderCart();
 }
 
@@ -223,7 +249,7 @@ function removeLine(idx) {
 }
 
 function cartTotal() {
-  return cart.reduce((sum, l) => sum + l.qty * l.prix_vente, 0);
+  return cart.reduce((sum, l) => sum + lineUnits(l) * l.prix_vente, 0);
 }
 
 function updateChange() {
@@ -262,7 +288,7 @@ async function validateSale() {
     cash_session_id: currentSession.id,
     payment_mode: paymentMode,
     amount_given: amountGiven,
-    items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, quantity_confirmed: l.quantity_confirmed })),
+    items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, unit: l.unit, quantity_confirmed: l.quantity_confirmed })),
     customer_id: paymentMode === "avoir" ? avoirCustomer.id : paymentMode === "credit" && creditCustomer ? creditCustomer.id : null,
     customer_name: paymentMode === "credit" && !creditCustomer ? creditName || null : null,
     customer_phone: paymentMode === "credit" && !creditCustomer ? document.getElementById("credit-phone").value.trim() || null : null,
@@ -319,7 +345,9 @@ async function createQuote() {
   }
 
   const payload = {
-    items: cart.map((l) => ({ product_id: l.product_id, qty: l.qty, quantity_confirmed: l.quantity_confirmed })),
+    // Les devis ne connaissent pas encore la notion carton/casier cote API :
+    // on convertit donc deja en unites de base avant envoi.
+    items: cart.map((l) => ({ product_id: l.product_id, qty: lineUnits(l), quantity_confirmed: l.quantity_confirmed })),
     customer_name: customerName,
     customer_phone: customerPhone,
   };

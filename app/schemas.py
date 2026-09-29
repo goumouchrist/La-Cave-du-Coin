@@ -211,7 +211,8 @@ class CashMovementOut(BaseModel):
 
 class SaleItemIn(BaseModel):
     product_id: int
-    qty: int = Field(gt=0)
+    qty: int = Field(gt=0, description="Quantité exprimée dans l'unité `unit` ci-dessous (pas toujours des unités de base)")
+    unit: str = Field(default="unite", description="unite, carton, ou pack (affiché \"Casier\") — conversion automatique vers l'unité de base")
     quantity_confirmed: bool = False
 
 

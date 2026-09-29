@@ -137,11 +137,11 @@ def build() -> None:
         "GUIDE DU CAISSIER", "Enregistrer une vente",
         [
             "Ajouter les produits : scanner le code-barres ou cliquer dans la recherche rapide",
-            "Ajuster les quantités (+ / −), choisir le mode de paiement",
-            "Saisir le montant remis → la monnaie s'affiche automatiquement",
+            "Ajuster les quantités (+ / −) et choisir l'unité (Unité / Carton / Casier) sur chaque ligne",
+            "Choisir le mode de paiement, saisir le montant remis → la monnaie s'affiche automatiquement",
             "Valider la vente → imprimer le reçu (2ᵉ impression = DUPLICATA automatique)",
         ],
-        note="Plus de 5 articles identiques → confirmation manuelle obligatoire (anti-fraude).",
+        note="Plus de 5 unités réelles d'un même produit (après conversion carton/casier) → confirmation manuelle obligatoire (anti-fraude).",
     )
     story += slide(
         "GUIDE DU CAISSIER", "Vente à crédit pour un client fidèle",
@@ -320,7 +320,7 @@ def build() -> None:
         ["Règle", "Seuil"],
         [
             ["Annulation par un Caissier", "5 min max, motif obligatoire"],
-            ["Vente/devis d'articles identiques", "confirmation requise au-delà de 5 unités"],
+            ["Vente/devis d'articles identiques", "confirmation requise au-delà de 5 unités réelles (après conversion carton/casier)"],
             ["Double scan du même produit", "alerte si < 2 secondes"],
             ["Écart de caisse à la fermeture", "blocage si > 10 000 GNF"],
             ["Mouvement de stock hors vente", "validation par une personne différente"],

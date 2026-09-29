@@ -33,10 +33,12 @@ Monnaie : **Franc Guinéen (GNF)**.
   (le caissier ne peut ni modifier les prix, ni valider un inventaire), journal
   `logs` de toutes les actions sensibles (connexion, ventes, annulations,
   mouvements de stock, ouverture/fermeture de caisse).
-- **Caisse** : ouverture avec fond de caisse initial, vente avec calcul
-  automatique de la monnaie à rendre (arrondi au multiple de 50 GNF), modes de
-  paiement Espèces / Mobile Money / Crédit, fermeture avec rapprochement
-  théorique/physique et **blocage automatique si l'écart dépasse le seuil**
+- **Caisse** : ouverture avec fond de caisse initial, vente au choix par
+  unité, carton ou casier (conversion automatique vers l'unité de base pour
+  le prix et le stock), calcul automatique de la monnaie à rendre (arrondi au
+  multiple de 50 GNF), modes de paiement Espèces / Mobile Money / Crédit,
+  fermeture avec rapprochement théorique/physique et **blocage automatique
+  si l'écart dépasse le seuil**
   (10 000 GNF par défaut).
 - **Retours clients & avoir** : au choix, un retour crédite un compte client
   (`customers`, identifié par téléphone, réutilisable via le mode de paiement
@@ -175,7 +177,7 @@ Créés par `scripts/seed_data.py` :
 ./.venv/Scripts/python.exe -m pytest -q
 ```
 
-168 tests couvrant : permissions par rôle, conversions d'unités
+170 tests couvrant : permissions par rôle, conversions d'unités
 (carton/casier/unité), ouverture/fermeture de caisse et blocage sur écart,
 création de vente (stock, monnaie, règle des >5 articles identiques),
 règles anti-fraude (annulation, prix minimum, duplicata, double validation
@@ -209,7 +211,7 @@ mémoire, aucune dépendance externe requise.
 | 2e impression d'un ticket → `DUPLICATA` | `app/services/sales.py::register_print` |
 | Modification de stock hors vente → double validation (saisie + supervision) | `app/services/stock.py::create_movement` / `validate_movement` |
 | Ajustement d'inventaire → validation Admin uniquement | `app/services/stock.py::validate_movement` |
-| Vente de > 5 articles identiques → confirmation de quantité requise (s'applique aussi à la création d'un devis) | `app/services/sales.py::create_sale`, `app/services/quotes.py::create_quote` |
+| Vente de > 5 articles identiques (unités réelles après conversion carton/casier) → confirmation de quantité requise (s'applique aussi à la création d'un devis) | `app/services/sales.py::create_sale`, `app/services/quotes.py::create_quote` |
 | Double scan du même produit en < 2s → alerte | `app/services/scan.py::log_scan` |
 | Remboursement espèces (retour client) > 10 000 GNF → Manager/Admin uniquement, session de caisse obligatoire | `app/services/returns.py::create_return` |
 | Toute action sensible tracée (utilisateur, IP, horodatage) | table `logs`, `app/services/logs.py` |

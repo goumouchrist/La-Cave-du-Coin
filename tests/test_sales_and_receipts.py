@@ -135,6 +135,48 @@ def test_more_than_five_identical_items_requires_confirmation(db_session):
     assert sale.total_amount == 6 * product.prix_vente
 
 
+def test_sale_by_carton_and_pack_converts_to_base_units_and_price(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager, qty_units=200)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+
+    sale = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.ESPECES, amount_given=200000,
+        items=[
+            {"product_id": product.id, "qty": 1, "unit": "carton", "quantity_confirmed": True},
+            {"product_id": product.id, "qty": 1, "unit": "pack", "quantity_confirmed": True},
+        ],
+    )
+
+    # 1 carton (24) + 1 casier/pack (6) : 30 unites au total, au prix unitaire habituel.
+    assert sale.total_amount == 30 * product.prix_vente
+    assert products_service.get_current_stock_units(db_session, product.id) == 200 - 30
+
+
+def test_sale_by_carton_triggers_identical_items_threshold_on_converted_units(db_session):
+    admin = create_user(db_session, "admin", "pw", Role.ADMIN)
+    manager = create_user(db_session, "manager", "pw", Role.MANAGER)
+    cashier = create_user(db_session, "cashier", "pw", Role.CAISSIER)
+    product = setup_product_with_stock(db_session, admin, manager, qty_units=200)
+    session_ = cash_service.open_session(db_session, cashier.id, opening_amount=0)
+
+    # 1 carton = 24 unites, largement > seuil de 5, meme si la quantite
+    # saisie au comptoir n'est qu'un "1".
+    with pytest.raises(sales_service.QuantityConfirmationRequiredError):
+        sales_service.create_sale(
+            db_session, cashier, session_.id, PaymentMode.ESPECES, amount_given=200000,
+            items=[{"product_id": product.id, "qty": 1, "unit": "carton", "quantity_confirmed": False}],
+        )
+
+    sale = sales_service.create_sale(
+        db_session, cashier, session_.id, PaymentMode.ESPECES, amount_given=200000,
+        items=[{"product_id": product.id, "qty": 1, "unit": "carton", "quantity_confirmed": True}],
+    )
+    assert sale.total_amount == 24 * product.prix_vente
+
+
 def test_manager_can_cancel_sale_anytime(db_session):
     admin = create_user(db_session, "admin", "pw", Role.ADMIN)
     manager = create_user(db_session, "manager", "pw", Role.MANAGER)
