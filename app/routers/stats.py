@@ -111,6 +111,7 @@ def today_summary(db: Session = Depends(get_db), _: User = Depends(require_role(
     returns_gnf = db.query(func.coalesce(func.sum(Return.total_refund_gnf), 0)).filter(
         func.date(Return.created_at) == today
     ).scalar()
+    returns_count = db.query(func.count(Return.id)).filter(func.date(Return.created_at) == today).scalar()
     revenue_gnf = int(sales_revenue_gnf or 0) - int(returns_gnf or 0)
     sales_count = db.query(func.count(Sale.id)).filter(
         Sale.status == SaleStatus.VALIDE, func.date(Sale.created_at) == today
@@ -130,6 +131,7 @@ def today_summary(db: Session = Depends(get_db), _: User = Depends(require_role(
         "quotes_created_count": int(quotes_created_count or 0),
         "quotes_converted_count": int(quotes_converted_count or 0),
         "stock_movements_count": int(stock_movements_count or 0),
+        "returns_count": int(returns_count or 0),
         "cash_gap_alerts_count": int(cash_gap_alerts_count or 0),
     }
 

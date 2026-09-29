@@ -279,7 +279,8 @@ def build() -> None:
     story += slide(
         "GUIDE DU MANAGER — NOUVEAU", "Tableau de bord \"Aujourd'hui\"",
         [
-            "CA du jour (net des retours du jour), ventes, devis créés/convertis, mouvements de stock, écarts de caisse",
+            "CA du jour (net des retours du jour), ventes, devis créés/convertis, mouvements de stock, remboursements, écarts de caisse",
+            "\"Mouvements de stock\" = nombre de lignes d'événement (pas de produits uniques)",
             "Flux d'activité chronologique de la journée",
             "Actualisation automatique toutes les 15 secondes",
             "Camembert des produits vendus aujourd'hui",

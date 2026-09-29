@@ -172,11 +172,12 @@ def build() -> None:
         "scannable directement via le QR code imprimé ; nom et téléphone du client obligatoires à la création "
         "pour permettre de retrouver un devis par recherche si le client perd son numéro.",
         "<b>Tableau de bord \"Aujourd'hui\"</b> : indicateurs du jour (CA, ventes, devis, mouvements de stock, "
-        "écarts de caisse) — tuiles avec accent coloré par métrique et animation de comptage à chaque "
-        "rafraîchissement — plus un camembert des produits vendus et un flux d'activité chronologique, "
+        "remboursements, écarts de caisse) — tuiles avec accent coloré par métrique et animation de comptage à "
+        "chaque rafraîchissement — plus un camembert des produits vendus et un flux d'activité chronologique, "
         "construits à partir du journal d'audit existant, rafraîchis automatiquement toutes les 15 secondes "
         "(voir section 8 sur ce choix). Le CA est net des retours du jour (avoir et espèces), imputés au jour "
-        "du retour et non à celui de la vente d'origine.",
+        "du retour et non à celui de la vente d'origine. \"Mouvements de stock\" compte des lignes d'événement "
+        "(une vente de 3 produits différents = 3 lignes), pas un total regroupé par produit.",
         "<b>Statistiques / prévisions</b> : top produits, ventilation par catégorie/caissier, prévision de "
         "chiffre d'affaires par régression linéaire simple, prévision de rupture de stock.",
         "<b>Documents PDF</b> : reçus et devis au format ticket thermique (80 mm) avec QR code, étiquettes "

@@ -410,13 +410,23 @@ Ce taux est **uniquement informatif** : il apparaît sur le reçu ("Dont TVA :
 
 Menu **"Statistiques"** :
 - **Section "Aujourd'hui"** en haut de la page : CA du jour, nombre de ventes,
-  nombre de devis créés/convertis, nombre de mouvements de stock, et nombre
-  d'écarts de caisse signalés — ainsi qu'un flux d'activité chronologique de
-  la journée (ventes, devis, mouvements de stock, sessions caisse, créances,
-  refus anti-fraude...). **Actualisation automatique toutes les 15 secondes**,
-  pas besoin de recharger la page. Le **CA du jour est net** : un retour client
-  (avoir ou espèces) est déduit du CA du jour **où il a lieu**, pas de celui de
-  la vente d'origine (qui peut être un autre jour, déjà clos).
+  nombre de devis créés/convertis, nombre de mouvements de stock, nombre de
+  remboursements effectués, et nombre d'écarts de caisse signalés — ainsi
+  qu'un flux d'activité chronologique de la journée (ventes, devis,
+  mouvements de stock, sessions caisse, créances, refus anti-fraude...).
+  **Actualisation automatique toutes les 15 secondes**, pas besoin de
+  recharger la page. Le **CA du jour est net** : un retour client (avoir ou
+  espèces) est déduit du CA du jour **où il a lieu**, pas de celui de la
+  vente d'origine (qui peut être un autre jour, déjà clos).
+  - **"Mouvements de stock" compte des lignes d'événement, pas des
+    produits** : chaque ligne enregistrée aujourd'hui (une vente de 3
+    produits différents = 3 lignes ; une entrée, une casse, un retour = 1
+    ligne chacun), quel que soit le produit concerné — pas un total regroupé
+    par produit unique. Un survol de la case (ou l'infobulle) rappelle cette
+    définition.
+  - **"Remboursements" compte le nombre de retours traités aujourd'hui**,
+    avoir et espèces confondus (pas leur montant, qui est déjà reflété dans
+    le CA net ci-dessus).
 - Top 5 des ventes des 7 derniers jours.
 - Répartition des ventes par catégorie et par caissier.
 - Prévision du chiffre d'affaires du lendemain.

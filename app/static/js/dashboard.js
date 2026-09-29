@@ -43,6 +43,7 @@ async function loadToday() {
     animateTileNumber(document.getElementById("today-revenue"), summary.revenue_gnf, formatGNF);
     animateTileNumber(document.getElementById("today-sales-count"), summary.sales_count);
     animateTileNumber(document.getElementById("today-stock-count"), summary.stock_movements_count);
+    animateTileNumber(document.getElementById("today-returns-count"), summary.returns_count);
 
     const quotesEl = document.getElementById("today-quotes-count");
     const quotesText = `${summary.quotes_created_count} / ${summary.quotes_converted_count}`;

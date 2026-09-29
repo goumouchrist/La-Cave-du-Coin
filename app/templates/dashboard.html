@@ -26,16 +26,23 @@
           <div class="today-tile-label">Devis (créés / convertis)</div>
           <div id="today-quotes-count" class="today-tile-value">—</div>
         </div>
-        <div class="today-tile" data-accent="violet">
+        <div class="today-tile" data-accent="violet" title="Nombre de lignes de mouvement enregistrées aujourd'hui (une ligne par produit et par événement : vente, retour, entrée, casse, don, ajustement) — pas un total regroupé par produit.">
           <div class="today-tile-label">Mouvements de stock</div>
           <div id="today-stock-count" class="today-tile-value">—</div>
+        </div>
+        <div class="today-tile" data-accent="teal" title="Nombre de retours clients traités aujourd'hui, avoir et espèces confondus.">
+          <div class="today-tile-label">Remboursements</div>
+          <div id="today-returns-count" class="today-tile-value">—</div>
         </div>
         <div class="today-tile" data-accent="danger" id="today-cash-gap-tile">
           <div class="today-tile-label">Écarts de caisse</div>
           <div id="today-cash-gap-count" class="today-tile-value">—</div>
         </div>
       </div>
-      <p style="font-size:0.8em; opacity:0.7; margin-top:10px">Actualisation automatique toutes les 15 secondes.</p>
+      <p style="font-size:0.8em; opacity:0.7; margin-top:10px">
+        Actualisation automatique toutes les 15 secondes. "Mouvements de stock" compte chaque ligne
+        d'événement affectant le stock (une vente de 3 produits = 3 lignes), pas un total par produit.
+      </p>
     </div>
 
     <div class="grid-2">

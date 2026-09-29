@@ -164,6 +164,7 @@ main {
 .today-tile:nth-child(3) { animation-delay: 0.1s; }
 .today-tile:nth-child(4) { animation-delay: 0.15s; }
 .today-tile:nth-child(5) { animation-delay: 0.2s; }
+.today-tile:nth-child(6) { animation-delay: 0.25s; }
 
 /* --tile-accent-text : version assombrie de l'accent, pour porter la couleur
    sur le chiffre lui-même tout en restant lisible sur le fond clair (même
@@ -174,6 +175,7 @@ main {
 .today-tile[data-accent="danger"]  { --tile-accent: var(--danger);  --tile-accent-text: #7a2418; }
 .today-tile[data-accent="info"]    { --tile-accent: #4a6a8a;        --tile-accent-text: #1f4e7a; }
 .today-tile[data-accent="violet"]  { --tile-accent: #8a4a7f;        --tile-accent-text: #6b2f63; }
+.today-tile[data-accent="teal"]    { --tile-accent: #2f8f78;        --tile-accent-text: #1f5c4d; }
 
 .today-tile-label {
   font-size: 0.85em;

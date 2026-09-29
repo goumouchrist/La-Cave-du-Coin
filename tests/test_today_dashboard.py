@@ -72,6 +72,7 @@ def test_today_summary_and_activity_reflect_todays_movements(client, auth_header
     assert summary["quotes_created_count"] == 1
     assert summary["quotes_converted_count"] == 1
     assert summary["stock_movements_count"] >= 1
+    assert summary["returns_count"] == 0
     assert summary["cash_gap_alerts_count"] == 1
 
     activity_res = client.get("/api/stats/today-activity", headers=headers)
@@ -153,3 +154,4 @@ def test_today_revenue_nets_out_same_day_returns_both_modes(client, auth_headers
     summary = client.get("/api/stats/today-summary", headers=headers).json()
     # 2 ventes de 5000 - 2 retours de 5000 (avoir + especes) = 0, les deux modes sont netes.
     assert summary["revenue_gnf"] == 0
+    assert summary["returns_count"] == 2
