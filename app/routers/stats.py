@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.deps import get_current_user, require_role
-from app.models import Log, Product, Quote, Role, Sale, SaleItem, SaleStatus, StockMovement, User
+from app.models import Log, PaymentMode, Product, Quote, Return, Role, Sale, SaleItem, SaleStatus, StockMovement, User
 from app.services import predictions as predictions_service
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
@@ -19,7 +19,10 @@ router = APIRouter(prefix="/api/stats", tags=["stats"])
 TODAY_ACTIVITY_LABELS = {
     "sale_created": lambda d: f"Vente #{d.get('sale_id')} enregistrée ({int(d.get('total', 0)):,} GNF)".replace(",", " "),
     "sale_cancelled": lambda d: f"Vente #{d.get('sale_id')} annulée ({d.get('reason', '')})",
-    "return_created": lambda d: f"Retour enregistré (vente #{d.get('sale_id')}) : {int(d.get('refund', 0)):,} GNF crédités".replace(",", " "),
+    "return_created": lambda d: (
+        f"Retour enregistré (vente #{d.get('sale_id')}) : {int(d.get('refund', 0)):,} GNF "
+        + ("remboursés en espèces" if d.get("refund_mode") == "especes" else "crédités en avoir")
+    ).replace(",", " "),
     "quote_created": lambda d: f"Devis #{d.get('quote_id')} créé ({int(d.get('total', 0)):,} GNF)".replace(",", " "),
     "quote_converted": lambda d: f"Devis #{d.get('quote_id')} converti en vente #{d.get('sale_id')}",
     "quote_cancelled": lambda d: f"Devis #{d.get('quote_id')} annulé",
@@ -99,9 +102,16 @@ def sales_by_cashier(db: Session = Depends(get_db), _: User = Depends(require_ro
 def today_summary(db: Session = Depends(get_db), _: User = Depends(require_role(Role.ADMIN, Role.MANAGER))):
     today = date.today()
 
-    revenue_gnf = db.query(func.coalesce(func.sum(Sale.total_amount), 0)).filter(
+    sales_revenue_gnf = db.query(func.coalesce(func.sum(Sale.total_amount), 0)).filter(
         Sale.status == SaleStatus.VALIDE, func.date(Sale.created_at) == today
     ).scalar()
+    # Les retours du jour sont deduits du CA du jour ou ils ont lieu (pas du
+    # jour de la vente d'origine, potentiellement deja close) - avoir compris,
+    # pour eviter un double comptage quand l'avoir sera depense plus tard.
+    returns_gnf = db.query(func.coalesce(func.sum(Return.total_refund_gnf), 0)).filter(
+        func.date(Return.created_at) == today
+    ).scalar()
+    revenue_gnf = int(sales_revenue_gnf or 0) - int(returns_gnf or 0)
     sales_count = db.query(func.count(Sale.id)).filter(
         Sale.status == SaleStatus.VALIDE, func.date(Sale.created_at) == today
     ).scalar()

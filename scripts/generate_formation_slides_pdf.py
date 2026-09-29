@@ -153,13 +153,15 @@ def build() -> None:
         note="Maximum 2 créances en cours par client — la 3ᵉ vente à crédit est refusée.",
     )
     story += slide(
-        "GUIDE DU CAISSIER", "Retour client et avoir",
+        "GUIDE DU CAISSIER", "Retour client : avoir ou espèces",
         [
-            "Jamais de remboursement en espèces : le montant est crédité sur un compte \"avoir\"",
             "Rechercher le ticket d'origine par numéro de transaction",
             "Indiquer la quantité retournée, le client, le motif",
-            "Le stock est réapprovisionné automatiquement, l'avoir réutilisable au prochain achat",
+            "Choisir le mode : \"Avoir\" (crédit réutilisable au prochain achat) ou \"Espèces\"",
+            "Espèces : nécessite une session de caisse ouverte, déduit du montant théorique attendu",
+            "Le stock est réapprovisionné automatiquement dans les deux cas",
         ],
+        note="Remboursement espèces > 10 000 GNF → réservé à un Manager/Admin (anti-fraude).",
     )
     story += slide(
         "GUIDE DU CAISSIER", "Créances clients",
@@ -277,7 +279,7 @@ def build() -> None:
     story += slide(
         "GUIDE DU MANAGER — NOUVEAU", "Tableau de bord \"Aujourd'hui\"",
         [
-            "CA du jour, ventes, devis créés/convertis, mouvements de stock, écarts de caisse",
+            "CA du jour (net des retours du jour), ventes, devis créés/convertis, mouvements de stock, écarts de caisse",
             "Flux d'activité chronologique de la journée",
             "Actualisation automatique toutes les 15 secondes",
             "Camembert des produits vendus aujourd'hui",
@@ -323,6 +325,7 @@ def build() -> None:
             ["Écart de caisse à la fermeture", "blocage si > 10 000 GNF"],
             ["Mouvement de stock hors vente", "validation par une personne différente"],
             ["Ajustement d'inventaire", "validation Admin uniquement"],
+            ["Remboursement espèces (retour client)", "Manager/Admin au-delà de 10 000 GNF"],
             ["Créances non réglées", "maximum 2 par client"],
             ["Réimpression d'un ticket", "DUPLICATA automatique"],
         ],

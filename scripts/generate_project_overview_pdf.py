@@ -106,7 +106,7 @@ def build() -> None:
             ("PDF", "reportlab + qrcode", "Reçus, devis, étiquettes produits, ce document"),
             ("Email", "smtplib (service mail.py)", "Envoi de reçus par email"),
             ("Frontend", "Jinja2 (templates serveur) + JS natif + Chart.js (CDN)", "Pas de framework JS : simplicité, pas de build step"),
-            ("Tests", "pytest + httpx (TestClient FastAPI)", "161 tests, unitaires et intégration HTTP"),
+            ("Tests", "pytest + httpx (TestClient FastAPI)", "168 tests, unitaires et intégration HTTP"),
             ("Conteneurisation", "Docker (python:3.12-slim) + Docker Compose", "Packaging et orchestration reproductible"),
             ("Reverse proxy / HTTPS", "Caddy 2", "HTTPS automatique (Let's Encrypt) sans configuration manuelle"),
             ("Hébergement", "VPS Hetzner (CX22, ~4,5 €/mois)", "Production réelle"),
@@ -162,8 +162,9 @@ def build() -> None:
         "<b>Fiche d'inventaire à l'aveugle</b> : PDF listant les produits actifs avec des colonnes vides à "
         "remplir à la main, <b>sans afficher le stock théorique</b> — pensé pour un comptage physique fiable "
         "par une tierce personne, sans biais.",
-        "<b>Clients</b> : vente à crédit (avec limite de créances simultanées par client), avoir suite à un "
-        "retour, règlements partiels avec allocation à la dette la plus ancienne.",
+        "<b>Clients</b> : vente à crédit (avec limite de créances simultanées par client), retour au choix en "
+        "avoir ou en espèces (déduit du tiroir, seuil Manager/Admin au-delà de 10 000 GNF), règlements partiels "
+        "avec allocation à la dette la plus ancienne.",
         "<b>Devis</b> : créer un devis sans avoir besoin d'une session de caisse ouverte, prix figé au moment "
         "de la création, conversion en vente réelle en un clic (réutilise toute la logique de vente : stock, "
         "paiement, anti-fraude), PDF dédié. Numéro court et non-ambigu (ex. <font face='Courier'>DEV-A7K9M</font>) "
@@ -173,7 +174,8 @@ def build() -> None:
         "écarts de caisse) — tuiles avec accent coloré par métrique et animation de comptage à chaque "
         "rafraîchissement — plus un camembert des produits vendus et un flux d'activité chronologique, "
         "construits à partir du journal d'audit existant, rafraîchis automatiquement toutes les 15 secondes "
-        "(voir section 8 sur ce choix).",
+        "(voir section 8 sur ce choix). Le CA est net des retours du jour (avoir et espèces), imputés au jour "
+        "du retour et non à celui de la vente d'origine.",
         "<b>Statistiques / prévisions</b> : top produits, ventilation par catégorie/caissier, prévision de "
         "chiffre d'affaires par régression linéaire simple, prévision de rupture de stock.",
         "<b>Documents PDF</b> : reçus et devis au format ticket thermique (80 mm) avec QR code, étiquettes "
@@ -198,6 +200,7 @@ def build() -> None:
             ("Écart de caisse à la fermeture", "session bloquée si écart &gt; 10 000 GNF, déblocage par un manager avec commentaire obligatoire"),
             ("Mouvement de stock hors vente", "doit être validé par une personne différente de celle qui l'a saisi"),
             ("Ajustement d'inventaire", "validation réservée à un Admin/Super Admin"),
+            ("Remboursement espèces (retour client)", "Manager/Admin au-delà de 10 000 GNF, session de caisse ouverte obligatoire"),
             ("Vente à crédit non réglée", "maximum 2 créances en cours par client, sinon vente refusée"),
             ("Prix de vente d'un produit", "ne peut pas descendre sous le prix d'achat - 5 %, sauf marqué \"promo\""),
             ("Réimpression d'un reçu/devis", "automatiquement marquée DUPLICATA"),
@@ -228,7 +231,7 @@ def build() -> None:
     ))
 
     # ------------------------------------------------------------------
-    story.append(Paragraph("7. Stratégie de tests — 161 tests", h1_style))
+    story.append(Paragraph("7. Stratégie de tests — 168 tests", h1_style))
     story.append(Paragraph(
         "La suite mélange volontairement deux niveaux, souvent dans un même fichier :",
         body_style,
@@ -251,7 +254,7 @@ def build() -> None:
             ("Sessions de caisse (ouverture/fermeture/écarts/résolution)", "test_cash_sessions.py"),
             ("Retours, avoir, crédit client, créances", "test_returns_and_credit.py, test_customer_credit.py"),
             ("Devis (création, conversion, expiration, recherche client, anti-fraude)", "test_quotes.py (16 tests)"),
-            ("Tableau de bord \"Aujourd'hui\"", "test_today_dashboard.py (4 tests)"),
+            ("Tableau de bord \"Aujourd'hui\"", "test_today_dashboard.py (5 tests)"),
             ("Fiche d'inventaire à l'aveugle", "test_inventory_sheet.py (4 tests)"),
             ("Stock : conversions, marges, double validation, ajustement négatif, lots FEFO", "test_products_stock_conversions.py"),
             ("Import CSV (produits, mouvements de stock)", "test_product_import.py, test_movement_import.py"),
@@ -403,6 +406,19 @@ def build() -> None:
         "\"ajoute un champ X\") révèle des trous que la relecture de code seule aurait pu manquer.",
         body_style,
     ))
+    story.append(Paragraph(
+        "<b>Troisième exemple, posé directement comme une question métier</b> (\"et si le client ne veut pas "
+        "d'avoir mais un remboursement en numéraire ?\") : jusque-là, un retour créditait toujours un avoir, "
+        "jamais de sortie de caisse réelle. Ajouter simplement un second mode aurait cassé la réconciliation de "
+        "caisse en fin de session (<font face='Courier'>compute_theoretical_amount</font> ne soustrayait rien) "
+        "— un remboursement espèces légitime serait apparu comme un écart suspect à la fermeture, l'inverse de "
+        "l'anti-fraude visée. Corrigé en rattachant le retour espèces à la session de caisse ouverte et en le "
+        "déduisant du montant théorique, avec un second garde-fou repris d'une règle déjà en place ailleurs "
+        "(validation Admin des ajustements) : au-delà de 10 000 GNF, seul un Manager/Admin peut traiter le "
+        "remboursement. Illustre qu'une nouvelle fonctionnalité financière doit toujours être vérifiée contre "
+        "les invariants comptables existants, pas seulement contre son propre cas d'usage.",
+        body_style,
+    ))
 
     # ------------------------------------------------------------------
     story.append(Paragraph("12. Limites connues et axes d'amélioration", h1_style))
@@ -431,7 +447,7 @@ def build() -> None:
     story.append(Paragraph("13. Pitch en une minute", h1_style))
     story.append(Paragraph(
         "\"J'ai conçu et développé seul, de bout en bout, un logiciel de caisse et de gestion de stock pour un "
-        "commerce réel — API FastAPI/SQLAlchemy typée, 161 tests automatisés (unitaires et intégration), "
+        "commerce réel — API FastAPI/SQLAlchemy typée, 168 tests automatisés (unitaires et intégration), "
         "règles anti-fraude explicites dictées par un vrai besoin métier, containerisé avec Docker et déployé "
         "sur un VPS avec HTTPS automatique. J'ai aussi mis en place un environnement de staging synchronisé "
         "automatiquement depuis la prod chaque mois, des sauvegardes régulières avec rétention, et je documente "

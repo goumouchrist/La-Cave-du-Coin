@@ -161,6 +161,8 @@ erDiagram
         int processed_by FK
         text reason
         int total_refund_gnf
+        enum refund_mode
+        int cash_session_id FK
         datetime created_at
     }
 
@@ -208,6 +210,7 @@ erDiagram
     USERS ||--o{ SCAN_LOGS : "user_id"
 
     CASH_SESSIONS ||--o{ SALES : "cash_session_id"
+    CASH_SESSIONS ||--o{ RETURNS : "cash_session_id"
     SALES ||--o{ SALE_ITEMS : "sale_id"
     SALES ||--o{ RETURNS : "sale_id"
     QUOTES ||--o{ QUOTE_ITEMS : "quote_id"

@@ -85,7 +85,7 @@ Menu **"Caisse"** :
    - **Espèces**, **Mobile Money**, **Soutra Money**, **Crédit Money**,
      **Paycard** : les plus simples, rien de particulier à faire.
    - **Avoir** *(solde crédité suite à un retour)* : le client a déjà un solde
-     avoir (voir [2.4](#24-retour-client-et-avoir)). Saisir son numéro de
+     avoir (voir section 2.4 "Retour client"). Saisir son numéro de
      téléphone dans le champ dédié et cliquer "Vérifier le solde" avant de
      valider — le système affiche le solde disponible.
    - **Crédit (client fidèle)** : voir la section suivante, dédiée.
@@ -124,24 +124,37 @@ d'abord régler au moins une de ses créances en cours (voir [2.5](#25-créances
 avant de pouvoir lui refaire crédit. Le compteur revient automatiquement à
 zéro dès que toutes ses créances sont réglées.
 
-### 2.4 Retour client et avoir
+### 2.4 Retour client : avoir ou remboursement en espèces
 
-Un client qui rapporte un article acheté n'est **jamais remboursé en
-espèces** : son montant est crédité sur un compte "avoir" qu'il pourra
-utiliser pour un futur achat.
+Un client qui rapporte un article acheté peut être remboursé de deux façons,
+au choix au moment du retour :
+- **Avoir** *(par défaut)* : le montant est crédité sur un compte "avoir" que
+  le client pourra utiliser pour un futur achat — aucune sortie de caisse.
+- **Espèces** : l'argent est rendu physiquement au client, immédiatement
+  déduit du montant théorique attendu dans le tiroir pour la session de
+  caisse en cours (pour que la fermeture de caisse reste juste — voir
+  section 2.6 "Fermer sa session de caisse"). Nécessite qu'une session de caisse
+  soit ouverte, sinon le choix "Avoir" est obligatoire.
 
 Dans la section **"Retour client (avoir)"** de la page Caisse :
 1. Saisir le **numéro de transaction** du ticket d'origine (imprimé sur le
    reçu), cliquer "Rechercher le ticket".
 2. Indiquer la **quantité à retourner** sur chaque ligne concernée (on ne peut
    pas retourner plus que ce qui a été vendu, même en plusieurs fois).
-3. Saisir le **nom et le téléphone** du client (le téléphone identifie son
-   compte avoir : s'il existe déjà, le solde s'additionne).
-4. Indiquer un motif, puis cliquer **"Créditer le client (avoir)"**.
+3. Saisir le **nom et le téléphone** du client — obligatoire quel que soit le
+   mode choisi, pour la traçabilité (le téléphone identifie aussi son compte
+   avoir si ce mode est choisi : s'il existe déjà, le solde s'additionne).
+4. Indiquer un motif, choisir **Avoir** ou **Remboursement en espèces**, puis
+   cliquer **"Valider le retour"**.
 
-Le stock est automatiquement réapprovisionné, et le solde avoir du client
-augmente du montant retourné. Le client pourra ensuite l'utiliser via le mode
-de paiement "Avoir" (voir [2.2](#22-enregistrer-une-vente)).
+Le stock est automatiquement réapprovisionné dans les deux cas — seule la
+contrepartie financière change. Le client pourra ensuite utiliser un avoir via
+le mode de paiement "Avoir" (voir [2.2](#22-enregistrer-une-vente)).
+
+**Anti-fraude** : un remboursement en espèces au-delà de **10 000 GNF** ne peut
+être traité que par un Manager ou un Admin (comme pour la validation d'un
+ajustement de stock) — un caissier seul ne peut pas faire sortir une grosse
+somme de la caisse sans supervision.
 
 ### 2.5 Créances clients
 
@@ -393,7 +406,9 @@ Menu **"Statistiques"** :
   d'écarts de caisse signalés — ainsi qu'un flux d'activité chronologique de
   la journée (ventes, devis, mouvements de stock, sessions caisse, créances,
   refus anti-fraude...). **Actualisation automatique toutes les 15 secondes**,
-  pas besoin de recharger la page.
+  pas besoin de recharger la page. Le **CA du jour est net** : un retour client
+  (avoir ou espèces) est déduit du CA du jour **où il a lieu**, pas de celui de
+  la vente d'origine (qui peut être un autre jour, déjà clos).
 - Top 5 des ventes des 7 derniers jours.
 - Répartition des ventes par catégorie et par caissier.
 - Prévision du chiffre d'affaires du lendemain.
@@ -506,6 +521,7 @@ parfois une action :
 | Écart de caisse à la fermeture | session bloquée si l'écart dépasse **10 000 GNF**, nécessite une validation Manager |
 | Mouvement de stock hors vente | doit être validé par une **personne différente** de celle qui l'a saisi |
 | Ajustement d'inventaire | validation réservée à un **Admin** (ou Super Admin) |
+| Remboursement en espèces (retour client) | traité par un **Manager/Admin** si le montant dépasse **10 000 GNF**, nécessite une session de caisse ouverte |
 | Vente à crédit non réglée par client | maximum **2 créances en cours** par client, sinon vente refusée |
 | Prix de vente d'un produit | ne peut pas descendre en dessous du prix d'achat − 5 %, sauf si marqué "promo" |
 | Réimpression d'un ticket | automatiquement marquée **DUPLICATA** |

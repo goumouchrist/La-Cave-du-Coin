@@ -38,12 +38,16 @@ Monnaie : **Franc Guinéen (GNF)**.
   paiement Espèces / Mobile Money / Crédit, fermeture avec rapprochement
   théorique/physique et **blocage automatique si l'écart dépasse le seuil**
   (10 000 GNF par défaut).
-- **Retours clients & avoir** — **décision actée** : un retour crédite un
-  compte client (`customers`, identifié par téléphone) plutôt qu'un
-  remboursement en espèces. Une vente peut ensuite être payée avec ce solde
-  (mode de paiement `avoir`). Le stock est automatiquement réapprovisionné, et
-  le système empêche de retourner plus que la quantité effectivement vendue
-  sur un ticket (même en plusieurs fois).
+- **Retours clients & avoir** : au choix, un retour crédite un compte client
+  (`customers`, identifié par téléphone, réutilisable via le mode de paiement
+  `avoir`) **ou** rembourse en espèces directement — dans ce cas rattaché à la
+  session de caisse ouverte et **soustrait du montant théorique attendu** à la
+  fermeture (pas de session ouverte = pas de remboursement espèces possible).
+  Au-delà de `RETURN_CASH_REFUND_MANAGER_THRESHOLD_GNF` (10 000 GNF par
+  défaut), un remboursement espèces exige un Manager/Admin. Le stock est
+  automatiquement réapprovisionné dans les deux cas, et le système empêche de
+  retourner plus que la quantité effectivement vendue sur un ticket (même en
+  plusieurs fois).
 - **TVA** — **décision actée** : non appliquée pour cette version (le champ
   `tva_rate` reste en base par produit pour une activation future si besoin).
 - **Stock** : catégories de boissons, unités Pièce/Carton/Pack avec
@@ -71,7 +75,9 @@ Monnaie : **Franc Guinéen (GNF)**.
 - **Tableau de bord "Aujourd'hui"** : indicateurs du jour (CA, ventes, devis,
   mouvements de stock, écarts de caisse) et flux d'activité chronologique,
   construits à partir du journal `logs` existant, rafraîchis automatiquement
-  toutes les 15 secondes (pas de websockets).
+  toutes les 15 secondes (pas de websockets). Le CA du jour est **net des
+  retours** (avoir et espèces), imputés au jour où le retour a lieu — jamais
+  à celui de la vente d'origine, pour ne jamais réécrire un jour déjà clos.
 - **Fournisseurs** : fiche fournisseur (nom, téléphone, adresse), rattachée en
   fournisseur habituel sur un produit et/ou à chaque mouvement d'entrée
   (avec n° de facture), avec **historique des livraisons par fournisseur**.
@@ -205,13 +211,15 @@ mémoire, aucune dépendance externe requise.
 | Ajustement d'inventaire → validation Admin uniquement | `app/services/stock.py::validate_movement` |
 | Vente de > 5 articles identiques → confirmation de quantité requise (s'applique aussi à la création d'un devis) | `app/services/sales.py::create_sale`, `app/services/quotes.py::create_quote` |
 | Double scan du même produit en < 2s → alerte | `app/services/scan.py::log_scan` |
+| Remboursement espèces (retour client) > 10 000 GNF → Manager/Admin uniquement, session de caisse obligatoire | `app/services/returns.py::create_return` |
 | Toute action sensible tracée (utilisateur, IP, horodatage) | table `logs`, `app/services/logs.py` |
 
 ## Modèle de données
 
 `users`, `products` (avec `barcode` unique indexé), `stock_movements`,
 `cash_sessions`, `sales`, `sale_items`, `quotes`, `quote_items`, `customers`,
-`logs`, `scan_logs` — voir
+`customer_repayments`, `returns`, `return_items`, `suppliers`, `logs`,
+`scan_logs` — voir
 [`app/models.py`](app/models.py) pour le détail des colonnes. Le stock courant
 d'un produit n'est pas stocké mais **dérivé** des mouvements validés
 (`app/services/products.py::get_current_stock_units`), pour garantir que la

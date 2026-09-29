@@ -108,3 +108,48 @@ def test_today_stats_forbidden_for_caissier(client, auth_headers):
     headers = auth_headers("cashier", Role.CAISSIER)
     res = client.get("/api/stats/today-summary", headers=headers)
     assert res.status_code == 403
+
+
+def test_today_revenue_nets_out_same_day_returns_both_modes(client, auth_headers, db_session):
+    headers = auth_headers("manager", Role.MANAGER)
+    admin = create_user(db_session, "admin", "pw2", Role.ADMIN)
+    manager2 = create_user(db_session, "manager2", "pw2", Role.MANAGER)
+    product = setup_product_with_stock(db_session, admin, manager2)
+
+    open_res = client.post("/api/cash-sessions/open", json={"opening_amount": 0}, headers=headers)
+    session_id = open_res.json()["id"]
+
+    sale1 = client.post(
+        "/api/sales",
+        json={"cash_session_id": session_id, "payment_mode": "especes", "amount_given": 5000, "items": [{"product_id": product.id, "qty": 1}]},
+        headers=headers,
+    ).json()
+    sale2 = client.post(
+        "/api/sales",
+        json={"cash_session_id": session_id, "payment_mode": "especes", "amount_given": 5000, "items": [{"product_id": product.id, "qty": 1}]},
+        headers=headers,
+    ).json()
+
+    return1 = client.post(
+        f"/api/sales/{sale1['id']}/return",
+        json={
+            "customer_name": "Client Avoir", "customer_phone": "600000001", "refund_mode": "avoir",
+            "items": [{"sale_item_id": sale1["items"][0]["id"], "qty": 1}],
+        },
+        headers=headers,
+    )
+    assert return1.status_code == 201, return1.text
+
+    return2 = client.post(
+        f"/api/sales/{sale2['id']}/return",
+        json={
+            "customer_name": "Client Especes", "customer_phone": "600000002", "refund_mode": "especes",
+            "items": [{"sale_item_id": sale2["items"][0]["id"], "qty": 1}],
+        },
+        headers=headers,
+    )
+    assert return2.status_code == 201, return2.text
+
+    summary = client.get("/api/stats/today-summary", headers=headers).json()
+    # 2 ventes de 5000 - 2 retours de 5000 (avoir + especes) = 0, les deux modes sont netes.
+    assert summary["revenue_gnf"] == 0

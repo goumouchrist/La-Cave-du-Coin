@@ -182,6 +182,11 @@ CREATE TABLE returns (
     processed_by        INTEGER NOT NULL REFERENCES users(id),
     reason              TEXT,
     total_refund_gnf    INTEGER NOT NULL,
+    -- AVOIR (defaut) credite le solde client ; ESPECES rend l'argent
+    -- physiquement et exige cash_session_id (soustrait du montant theorique
+    -- de cette session, voir compute_theoretical_amount).
+    refund_mode         payment_mode NOT NULL DEFAULT 'AVOIR',
+    cash_session_id     INTEGER REFERENCES cash_sessions(id),
     created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
