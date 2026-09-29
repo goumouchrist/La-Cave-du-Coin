@@ -38,17 +38,23 @@ REAL_ACTIVITY_COUNT="$(docker exec "$PROD_DB" psql -U cave_du_coin -d cave_du_co
 
 DEMO_BACKUP="$(ls -1t backup_before_reset_*.dump 2>/dev/null | head -n 1 || true)"
 
+# pg_restore --clean peut echouer partiellement (ex: contrainte impossible a
+# supprimer sur une table dont une AUTRE table depend via une cle etrangere
+# ajoutee par une migration posterieure a ce dump) - "|| true" evite que ce
+# genre d'erreur ponctuelle, deja "ignoree" par pg_restore lui-meme, ne tue
+# tout le script via "set -e" avant la reapplication des migrations ci-dessous
+# qui corrige justement ce type de structure obsolete.
 if [ "$REAL_ACTIVITY_COUNT" -gt 0 ]; then
   log "prod contient de vraies donnees (produits+ventes=$REAL_ACTIVITY_COUNT) : copie normale prod -> staging"
   docker exec "$PROD_DB" pg_dump -U cave_du_coin -Fc cave_du_coin \
-    | docker exec -i "$STAGING_DB" pg_restore -U cave_du_coin -d cave_du_coin --clean --if-exists
+    | docker exec -i "$STAGING_DB" pg_restore -U cave_du_coin -d cave_du_coin --clean --if-exists || true
 elif [ -n "$DEMO_BACKUP" ]; then
   log "prod ne contient encore aucun produit/vente reel : restauration des donnees de demo ($DEMO_BACKUP)"
-  docker exec -i "$STAGING_DB" pg_restore -U cave_du_coin -d cave_du_coin --clean --if-exists < "$DEMO_BACKUP"
+  docker exec -i "$STAGING_DB" pg_restore -U cave_du_coin -d cave_du_coin --clean --if-exists < "$DEMO_BACKUP" || true
 else
   log "prod vide et aucune sauvegarde de demo disponible : copie normale prod -> staging (base vide)"
   docker exec "$PROD_DB" pg_dump -U cave_du_coin -Fc cave_du_coin \
-    | docker exec -i "$STAGING_DB" pg_restore -U cave_du_coin -d cave_du_coin --clean --if-exists
+    | docker exec -i "$STAGING_DB" pg_restore -U cave_du_coin -d cave_du_coin --clean --if-exists || true
 fi
 
 log "reapplication des migrations (une sauvegarde plus ancienne que le code peut recreer une table avec une structure obsolete, ex: colonne manquante)"
